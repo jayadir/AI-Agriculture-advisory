@@ -1,0 +1,43 @@
+{"timestamp": "2025-10-17T17:24:50.839083Z", "level": "info", "event": "Running in LOCAL mode: .env loaded"}
+{"timestamp": "2025-10-17T17:24:50.840082Z", "level": "info", "event": "Loaded GROQ_API_KEY from individual env var"}
+{"timestamp": "2025-10-17T17:24:50.840082Z", "level": "info", "event": "Loaded GOOGLE_API_KEY from individual env var"}
+{"keys": {"GROQ_API_KEY": "your_g...", "GOOGLE_API_KEY": "AIzaSy..."}, "timestamp": "2025-10-17T17:24:50.841602Z", "level": "info", "event": "API keys loaded"}
+{"config_keys": ["embedding_model", "retriever", "llm"], "timestamp": "2025-10-17T17:24:50.875820Z", "level": "info", "event": "YAML config loaded"}
+{"session_id": "session_20251017_225450_ebf9a238", "temp_dir": "data\\session_20251017_225450_ebf9a238", "faiss_dir": "faiss_index\\session_20251017_225450_ebf9a238", "sessionized": true, "timestamp": "2025-10-17T17:24:50.879854Z", "level": "info", "event": "ChatIngestor initialized"}
+{"uploaded": "C:/Users/JAYADIR/OneDrive/Desktop/llmops/data/FUNDAMENTALS-OF-CROP-PHYSIOLOGY.pdf", "saved_as": "data\\session_20251017_225450_ebf9a238\\5b77955c.pdf", "timestamp": "2025-10-17T17:24:50.895128Z", "level": "info", "event": "File saved for ingestion"}
+{"count": 112, "timestamp": "2025-10-17T17:25:08.293654Z", "level": "info", "event": "Documents loaded"}
+{"chunks": 430, "chunk_size": 700, "overlap": 100, "timestamp": "2025-10-17T17:25:08.345226Z", "level": "info", "event": "Documents split"}
+{"provider": "huggingface", "model": "sentence-transformers/all-MiniLM-L6-v2", "timestamp": "2025-10-17T17:25:08.348224Z", "level": "info", "event": "Loading embedding model"}
+Use pytorch device_name: cpu
+Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+Loading faiss with AVX512 support.
+Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+Loading faiss with AVX2 support.
+Successfully loaded faiss with AVX2 support.
+{"added": 1, "index": "faiss_index\\session_20251017_225450_ebf9a238", "timestamp": "2025-10-17T17:27:29.937556Z", "level": "info", "event": "FAISS index updated"}
+{"k": 5, "fetch_k": 20, "lambda_mult": 0.5, "timestamp": "2025-10-17T17:27:29.938551Z", "level": "info", "event": "Using MMR search"}
+{"timestamp": "2025-10-17T17:27:29.948552Z", "level": "info", "event": "Running in LOCAL mode: .env loaded"}
+{"timestamp": "2025-10-17T17:27:29.949554Z", "level": "info", "event": "Loaded GROQ_API_KEY from individual env var"}
+{"timestamp": "2025-10-17T17:27:29.950553Z", "level": "info", "event": "Loaded GOOGLE_API_KEY from individual env var"}
+{"keys": {"GROQ_API_KEY": "your_g...", "GOOGLE_API_KEY": "AIzaSy..."}, "timestamp": "2025-10-17T17:27:29.950553Z", "level": "info", "event": "API keys loaded"}
+{"config_keys": ["embedding_model", "retriever", "llm"], "timestamp": "2025-10-17T17:27:29.962967Z", "level": "info", "event": "YAML config loaded"}
+{"provider": "google", "model": "gemini-2.0-flash", "timestamp": "2025-10-17T17:27:29.962967Z", "level": "info", "event": "Loading LLM"}
+{"session_id": "session_20251017_225450_ebf9a238", "timestamp": "2025-10-17T17:27:30.197225Z", "level": "info", "event": "LLM loaded successfully"}
+{"session_id": "session_20251017_225450_ebf9a238", "timestamp": "2025-10-17T17:27:30.198237Z", "level": "info", "event": "ConversationalRAG initialized"}
+{"timestamp": "2025-10-17T17:27:30.207231Z", "level": "info", "event": "Running in LOCAL mode: .env loaded"}
+{"timestamp": "2025-10-17T17:27:30.208542Z", "level": "info", "event": "Loaded GROQ_API_KEY from individual env var"}
+{"timestamp": "2025-10-17T17:27:30.209560Z", "level": "info", "event": "Loaded GOOGLE_API_KEY from individual env var"}
+{"keys": {"GROQ_API_KEY": "your_g...", "GOOGLE_API_KEY": "AIzaSy..."}, "timestamp": "2025-10-17T17:27:30.210792Z", "level": "info", "event": "API keys loaded"}
+{"config_keys": ["embedding_model", "retriever", "llm"], "timestamp": "2025-10-17T17:27:30.224040Z", "level": "info", "event": "YAML config loaded"}
+{"provider": "huggingface", "model": "sentence-transformers/all-MiniLM-L6-v2", "timestamp": "2025-10-17T17:27:30.225010Z", "level": "info", "event": "Loading embedding model"}
+Use pytorch device_name: cpu
+Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+{"session_id": "session_20251017_225450_ebf9a238", "timestamp": "2025-10-17T17:27:34.096240Z", "level": "info", "event": "LCEL graph built successfully"}
+{"index_path": "faiss_index\\session_20251017_225450_ebf9a238", "index_name": "index", "search_type": "mmr", "k": 5, "fetch_k": 20, "lambda_mult": 0.5, "session_id": "session_20251017_225450_ebf9a238", "timestamp": "2025-10-17T17:27:34.097240Z", "level": "info", "event": "FAISS retriever loaded successfully"}
+Failed to get info from https://smith.langchain.com: JSONDecodeError('Expecting value: line 1 column 1 (char 0)')
+Failed to batch ingest runs: langsmith.utils.LangSmithError: Failed to POST https://smith.langchain.com/runs/batch in LangSmith API. HTTPError('405 Client Error: Method Not Allowed for url: https://smith.langchain.com/runs/batch', '<html>\r\n<head><title>405 Not Allowed</title></head>\r\n<body>\r\n<center><h1>405 Not Allowed</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>\r\n')
+Failed to batch ingest runs: langsmith.utils.LangSmithError: Failed to POST https://smith.langchain.com/runs/batch in LangSmith API. HTTPError('405 Client Error: Method Not Allowed for url: https://smith.langchain.com/runs/batch', '<html>\r\n<head><title>405 Not Allowed</title></head>\r\n<body>\r\n<center><h1>405 Not Allowed</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>\r\n')
+Failed to batch ingest runs: langsmith.utils.LangSmithError: Failed to POST https://smith.langchain.com/runs/batch in LangSmith API. HTTPError('405 Client Error: Method Not Allowed for url: https://smith.langchain.com/runs/batch', '<html>\r\n<head><title>405 Not Allowed</title></head>\r\n<body>\r\n<center><h1>405 Not Allowed</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>\r\n')
+{"session_id": "session_20251017_225450_ebf9a238", "user_input": "hello", "answer_preview": "Hi there! How can I help you today?", "timestamp": "2025-10-17T17:28:13.972826Z", "level": "info", "event": "Chain invoked successfully"}
+Failed to batch ingest runs: langsmith.utils.LangSmithError: Failed to POST https://smith.langchain.com/runs/batch in LangSmith API. HTTPError('405 Client Error: Method Not Allowed for url: https://smith.langchain.com/runs/batch', '<html>\r\n<head><title>405 Not Allowed</title></head>\r\n<body>\r\n<center><h1>405 Not Allowed</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>\r\n')

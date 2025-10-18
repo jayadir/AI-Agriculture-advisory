@@ -1,0 +1,42 @@
+{"timestamp": "2025-10-17T11:22:19.665345Z", "level": "info", "event": "Running in LOCAL mode: .env loaded"}
+{"timestamp": "2025-10-17T11:22:19.666338Z", "level": "info", "event": "Loaded GROQ_API_KEY from individual env var"}
+{"timestamp": "2025-10-17T11:22:19.666895Z", "level": "info", "event": "Loaded GOOGLE_API_KEY from individual env var"}
+{"keys": {"GROQ_API_KEY": "your_g...", "GOOGLE_API_KEY": "AIzaSy..."}, "timestamp": "2025-10-17T11:22:19.667296Z", "level": "info", "event": "API keys loaded"}
+{"config_keys": ["embedding_model", "retriever", "llm"], "timestamp": "2025-10-17T11:22:19.683878Z", "level": "info", "event": "YAML config loaded"}
+{"session_id": "session_20251017_165219_6067da9b", "temp_dir": "data\\session_20251017_165219_6067da9b", "faiss_dir": "faiss_index\\session_20251017_165219_6067da9b", "sessionized": true, "timestamp": "2025-10-17T11:22:19.685885Z", "level": "info", "event": "ChatIngestor initialized"}
+{"uploaded": "C:/Users/JAYADIR/OneDrive/Desktop/llmops/data/FUNDAMENTALS-OF-CROP-PHYSIOLOGY.pdf", "saved_as": "data\\session_20251017_165219_6067da9b\\65133c62.pdf", "timestamp": "2025-10-17T11:22:19.692882Z", "level": "info", "event": "File saved for ingestion"}
+{"count": 112, "timestamp": "2025-10-17T11:22:26.313965Z", "level": "info", "event": "Documents loaded"}
+{"chunks": 430, "chunk_size": 700, "overlap": 100, "timestamp": "2025-10-17T11:22:26.331329Z", "level": "info", "event": "Documents split"}
+{"provider": "huggingface", "model": "sentence-transformers/all-MiniLM-L6-v2", "timestamp": "2025-10-17T11:22:26.332333Z", "level": "info", "event": "Loading embedding model"}
+Use pytorch device_name: cpu
+Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+Xet Storage is enabled for this repo, but the 'hf_xet' package is not installed. Falling back to regular HTTP download. For better performance, install the package with: `pip install huggingface_hub[hf_xet]` or `pip install hf_xet`
+Loading faiss with AVX512 support.
+Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+Loading faiss with AVX2 support.
+Successfully loaded faiss with AVX2 support.
+{"added": 1, "index": "faiss_index\\session_20251017_165219_6067da9b", "timestamp": "2025-10-17T11:24:48.426551Z", "level": "info", "event": "FAISS index updated"}
+{"k": 5, "fetch_k": 20, "lambda_mult": 0.5, "timestamp": "2025-10-17T11:24:48.426551Z", "level": "info", "event": "Using MMR search"}
+{"timestamp": "2025-10-17T11:24:48.429551Z", "level": "info", "event": "Running in LOCAL mode: .env loaded"}
+{"timestamp": "2025-10-17T11:24:48.429551Z", "level": "info", "event": "Loaded GROQ_API_KEY from individual env var"}
+{"timestamp": "2025-10-17T11:24:48.430551Z", "level": "info", "event": "Loaded GOOGLE_API_KEY from individual env var"}
+{"keys": {"GROQ_API_KEY": "your_g...", "GOOGLE_API_KEY": "AIzaSy..."}, "timestamp": "2025-10-17T11:24:48.430551Z", "level": "info", "event": "API keys loaded"}
+{"config_keys": ["embedding_model", "retriever", "llm"], "timestamp": "2025-10-17T11:24:48.436550Z", "level": "info", "event": "YAML config loaded"}
+{"provider": "google", "model": "gemini-2.0-flash", "timestamp": "2025-10-17T11:24:48.437553Z", "level": "info", "event": "Loading LLM"}
+{"session_id": "session_20251017_165219_6067da9b", "timestamp": "2025-10-17T11:24:48.727713Z", "level": "info", "event": "LLM loaded successfully"}
+{"session_id": "session_20251017_165219_6067da9b", "timestamp": "2025-10-17T11:24:48.728984Z", "level": "info", "event": "ConversationalRAG initialized"}
+{"timestamp": "2025-10-17T11:24:48.731483Z", "level": "info", "event": "Running in LOCAL mode: .env loaded"}
+{"timestamp": "2025-10-17T11:24:48.731483Z", "level": "info", "event": "Loaded GROQ_API_KEY from individual env var"}
+{"timestamp": "2025-10-17T11:24:48.731483Z", "level": "info", "event": "Loaded GOOGLE_API_KEY from individual env var"}
+{"keys": {"GROQ_API_KEY": "your_g...", "GOOGLE_API_KEY": "AIzaSy..."}, "timestamp": "2025-10-17T11:24:48.731483Z", "level": "info", "event": "API keys loaded"}
+{"config_keys": ["embedding_model", "retriever", "llm"], "timestamp": "2025-10-17T11:24:48.737226Z", "level": "info", "event": "YAML config loaded"}
+{"provider": "huggingface", "model": "sentence-transformers/all-MiniLM-L6-v2", "timestamp": "2025-10-17T11:24:48.738254Z", "level": "info", "event": "Loading embedding model"}
+Use pytorch device_name: cpu
+Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+{"session_id": "session_20251017_165219_6067da9b", "timestamp": "2025-10-17T11:24:52.052668Z", "level": "info", "event": "LCEL graph built successfully"}
+{"index_path": "faiss_index\\session_20251017_165219_6067da9b", "index_name": "index", "search_type": "mmr", "k": 5, "fetch_k": 20, "lambda_mult": 0.5, "session_id": "session_20251017_165219_6067da9b", "timestamp": "2025-10-17T11:24:52.052668Z", "level": "info", "event": "FAISS retriever loaded successfully"}
+{"session_id": "session_20251017_165219_6067da9b", "user_input": "explain about imbibition", "answer_preview": "Imbibition is when certain substances absorb a liquid and swell up. This occurs due to a force of attraction between the imbibants and the involved su", "timestamp": "2025-10-17T11:25:27.708550Z", "level": "info", "event": "Chain invoked successfully"}
+{"session_id": "session_20251017_165219_6067da9b", "user_input": "what is the context that youve received in the previous prompt regarding imbibition", "answer_preview": "The context provided explains that imbibition is when substances absorb a liquid and swell, giving the example of dry seeds placed in water. It also m", "timestamp": "2025-10-17T11:26:55.546018Z", "level": "info", "event": "Chain invoked successfully"}
+{"session_id": "session_20251017_165219_6067da9b", "user_input": "is there any equation for imbibition", "answer_preview": "I'm sorry, but there is no equation for imbibition in the provided text.", "timestamp": "2025-10-17T11:27:24.052144Z", "level": "info", "event": "Chain invoked successfully"}
+Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised RetryError: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.24.170:443: tcp handshaker shutdown.

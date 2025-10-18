@@ -1,0 +1,38 @@
+{"timestamp": "2025-10-17T17:32:55.687581Z", "level": "info", "event": "Running in LOCAL mode: .env loaded"}
+{"timestamp": "2025-10-17T17:32:55.687581Z", "level": "info", "event": "Loaded GROQ_API_KEY from individual env var"}
+{"timestamp": "2025-10-17T17:32:55.688564Z", "level": "info", "event": "Loaded GOOGLE_API_KEY from individual env var"}
+{"keys": {"GROQ_API_KEY": "your_g...", "GOOGLE_API_KEY": "AIzaSy..."}, "timestamp": "2025-10-17T17:32:55.688564Z", "level": "info", "event": "API keys loaded"}
+{"config_keys": ["embedding_model", "retriever", "llm"], "timestamp": "2025-10-17T17:32:55.694582Z", "level": "info", "event": "YAML config loaded"}
+{"session_id": "session_20251017_230255_275c2f69", "temp_dir": "data\\session_20251017_230255_275c2f69", "faiss_dir": "faiss_index\\session_20251017_230255_275c2f69", "sessionized": true, "timestamp": "2025-10-17T17:32:55.696912Z", "level": "info", "event": "ChatIngestor initialized"}
+{"uploaded": "C:/Users/JAYADIR/OneDrive/Desktop/llmops/data/FUNDAMENTALS-OF-CROP-PHYSIOLOGY.pdf", "saved_as": "data\\session_20251017_230255_275c2f69\\0167ede5.pdf", "timestamp": "2025-10-17T17:32:55.709561Z", "level": "info", "event": "File saved for ingestion"}
+{"count": 112, "timestamp": "2025-10-17T17:33:05.922272Z", "level": "info", "event": "Documents loaded"}
+{"chunks": 430, "chunk_size": 700, "overlap": 100, "timestamp": "2025-10-17T17:33:05.964841Z", "level": "info", "event": "Documents split"}
+{"provider": "huggingface", "model": "sentence-transformers/all-MiniLM-L6-v2", "timestamp": "2025-10-17T17:33:05.968836Z", "level": "info", "event": "Loading embedding model"}
+Use pytorch device_name: cpu
+Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+Loading faiss with AVX512 support.
+Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+Loading faiss with AVX2 support.
+Successfully loaded faiss with AVX2 support.
+{"added": 1, "index": "faiss_index\\session_20251017_230255_275c2f69", "timestamp": "2025-10-17T17:33:51.557303Z", "level": "info", "event": "FAISS index updated"}
+{"k": 5, "fetch_k": 20, "lambda_mult": 0.5, "timestamp": "2025-10-17T17:33:51.558308Z", "level": "info", "event": "Using MMR search"}
+{"timestamp": "2025-10-17T17:33:51.562316Z", "level": "info", "event": "Running in LOCAL mode: .env loaded"}
+{"timestamp": "2025-10-17T17:33:51.562316Z", "level": "info", "event": "Loaded GROQ_API_KEY from individual env var"}
+{"timestamp": "2025-10-17T17:33:51.563305Z", "level": "info", "event": "Loaded GOOGLE_API_KEY from individual env var"}
+{"keys": {"GROQ_API_KEY": "your_g...", "GOOGLE_API_KEY": "AIzaSy..."}, "timestamp": "2025-10-17T17:33:51.563305Z", "level": "info", "event": "API keys loaded"}
+{"config_keys": ["embedding_model", "retriever", "llm"], "timestamp": "2025-10-17T17:33:51.568300Z", "level": "info", "event": "YAML config loaded"}
+{"provider": "google", "model": "gemini-2.0-flash", "timestamp": "2025-10-17T17:33:51.569300Z", "level": "info", "event": "Loading LLM"}
+{"session_id": "session_20251017_230255_275c2f69", "timestamp": "2025-10-17T17:33:51.608306Z", "level": "info", "event": "LLM loaded successfully"}
+{"session_id": "session_20251017_230255_275c2f69", "timestamp": "2025-10-17T17:33:51.609304Z", "level": "info", "event": "ConversationalRAG initialized"}
+{"timestamp": "2025-10-17T17:33:51.612307Z", "level": "info", "event": "Running in LOCAL mode: .env loaded"}
+{"timestamp": "2025-10-17T17:33:51.612307Z", "level": "info", "event": "Loaded GROQ_API_KEY from individual env var"}
+{"timestamp": "2025-10-17T17:33:51.613304Z", "level": "info", "event": "Loaded GOOGLE_API_KEY from individual env var"}
+{"keys": {"GROQ_API_KEY": "your_g...", "GOOGLE_API_KEY": "AIzaSy..."}, "timestamp": "2025-10-17T17:33:51.613304Z", "level": "info", "event": "API keys loaded"}
+{"config_keys": ["embedding_model", "retriever", "llm"], "timestamp": "2025-10-17T17:33:51.617301Z", "level": "info", "event": "YAML config loaded"}
+{"provider": "huggingface", "model": "sentence-transformers/all-MiniLM-L6-v2", "timestamp": "2025-10-17T17:33:51.618303Z", "level": "info", "event": "Loading embedding model"}
+Use pytorch device_name: cpu
+Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+{"session_id": "session_20251017_230255_275c2f69", "timestamp": "2025-10-17T17:33:59.718618Z", "level": "info", "event": "LCEL graph built successfully"}
+{"index_path": "faiss_index\\session_20251017_230255_275c2f69", "index_name": "index", "search_type": "mmr", "k": 5, "fetch_k": 20, "lambda_mult": 0.5, "session_id": "session_20251017_230255_275c2f69", "timestamp": "2025-10-17T17:33:59.718618Z", "level": "info", "event": "FAISS retriever loaded successfully"}
+{"session_id": "session_20251017_230255_275c2f69", "user_input": "hello", "answer_preview": "Hi there! How can I help you today?", "timestamp": "2025-10-17T17:34:07.464971Z", "level": "info", "event": "Chain invoked successfully"}
