@@ -1,0 +1,19 @@
+fastapi
+uvicorn[standard]
+motor
+pydantic
+python-dotenv
+requests
+httpx
+# AI & RAG
+torch
+sentence-transformers
+langchain
+langchain-community
+langchain-groq
+langchain-google-genai
+faiss-cpu
+einops
+# Utilities
+numpy
+pandas
