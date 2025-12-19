@@ -7,13 +7,20 @@ requests
 httpx
 # AI & RAG
 torch
+datasets
+huggingface_hub
 sentence-transformers
 langchain
 langchain-community
 langchain-groq
 langchain-google-genai
+beautifulsoup4
+duckduckgo-search
+ddgs
+tavily-python
 faiss-cpu
 einops
 # Utilities
 numpy
 pandas
+tqdm
