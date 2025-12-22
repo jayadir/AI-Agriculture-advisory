@@ -5,8 +5,9 @@ from app.models.webhook import SMSPayload
 from app.rag.engine import get_rag_engine,RAGEngine
 from app.models.user import UserInDB
 from datetime import datetime
-from app.services.web_pipeline import answer_with_web_context
+from app.services.web_pipeline import invoke_web_pipeline
 from typing import Optional
+from app.services.llm import generate_response, classify_data_quality
 
 router=APIRouter()
 
@@ -29,8 +30,12 @@ async def handle_gsm_webhook(
         new_user = UserInDB(phone_number=phone, full_name="Guest Farmer")
         await db["users"].insert_one(new_user.model_dump(by_alias=True))
     
-    result = await engine.process(query_text)
-    answer_text = result
+    context_docs = await engine.process(query_text)
+    
+    is_context_relevant = await classify_data_quality(query_text, context_docs)
+    if not is_context_relevant:
+        context_docs=await invoke_web_pipeline(query_text)
+    answer_text = await generate_response(query_text,context_docs)
     
     background_tasks.add_task(
         log_interaction, 
@@ -57,29 +62,3 @@ async def log_interaction(db, phone, query, response):
     await db["chat_sessions"].insert_one(session_data)
 
 
-class WebAsk(BaseModel):
-    query: str
-    top_k: Optional[int] = 5
-
-
-@router.post("/web_ask", response_description="Answer using web + store in vector DB")
-async def web_ask(payload: WebAsk, db = Depends(get_database)):
-    if not payload.query:
-        raise HTTPException(status_code=400, detail="Missing query")
-    try:
-        answer, summaries = answer_with_web_context(payload.query, k=payload.top_k or 5)
-        # persist summaries in Mongo
-        docs = []
-        now = datetime.utcnow()
-        for s in summaries:
-            docs.append({
-                "query": payload.query,
-                "source": s.get("source"),
-                "extracted": s.get("extracted"),
-                "created_at": now
-            })
-        if docs:
-            await db["web_insights"].insert_many(docs)
-        return {"answer": answer, "insights": summaries}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))

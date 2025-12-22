@@ -4,16 +4,21 @@ motor
 pydantic
 python-dotenv
 requests
+pymongo
 httpx
 # AI & RAG
 torch
+
 datasets
 huggingface_hub
 sentence-transformers
+langgraph
 langchain
 langchain-community
 langchain-groq
+langgraph-checkpoint-mongodb
 langchain-google-genai
+langchain-tavily
 beautifulsoup4
 duckduckgo-search
 ddgs

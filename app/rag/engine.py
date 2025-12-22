@@ -127,22 +127,22 @@ class RAGEngine:
             "expl": v_expl.cpu().numpy()
         }
         # Debug: Check how different the variants are from the base
-        sim_tech = torch.nn.functional.cosine_similarity(q_base_tensor, v_tech)
-        print(f"Similarity (Base <-> Tech): {sim_tech.item():.4f}")
-        sim_para = torch.nn.functional.cosine_similarity(q_base_tensor, v_para)
-        print(f"Similarity (Base <-> Para): {sim_para.item():.4f}")
-        sim_broad = torch.nn.functional.cosine_similarity(q_base_tensor, v_broad)
-        print(f"Similarity (Base <-> Broad): {sim_broad.item():.4f}")
-        sim_expl = torch.nn.functional.cosine_similarity(q_base_tensor, v_expl)
-        print(f"Similarity (Base <-> Expl): {sim_expl.item():.4f}")
+        # sim_tech = torch.nn.functional.cosine_similarity(q_base_tensor, v_tech)
+        # print(f"Similarity (Base <-> Tech): {sim_tech.item():.4f}")
+        # sim_para = torch.nn.functional.cosine_similarity(q_base_tensor, v_para)
+        # print(f"Similarity (Base <-> Para): {sim_para.item():.4f}")
+        # sim_broad = torch.nn.functional.cosine_similarity(q_base_tensor, v_broad)
+        # print(f"Similarity (Base <-> Broad): {sim_broad.item():.4f}")
+        # sim_expl = torch.nn.functional.cosine_similarity(q_base_tensor, v_expl)
+        # print(f"Similarity (Base <-> Expl): {sim_expl.item():.4f}")
         
         unique_docs={}
         for name,vec_np in query_vectors.items():
             results=self.vectorstore.similarity_search_by_vector(vec_np[0], k=RETRIEVAL_K)
             
-            candidates=[doc.page_content for doc in results]
-            docs="\n--------------------\n".join(candidates)
-            print(f"Top-{RETRIEVAL_K} docs for '{name}' query vector:\n{docs}\n")
+            # candidates=[doc.page_content for doc in results]
+            # docs="\n--------------------\n".join(candidates)
+            # print(f"Top-{RETRIEVAL_K} docs for '{name}' query vector:\n{docs}\n")
             for doc in results:
                 if doc.page_content not in unique_docs:
                     unique_docs[doc.page_content] = doc
@@ -171,27 +171,28 @@ class RAGEngine:
                 q_broadcast, s_base, d_para, d_broad, d_tech, d_expl
             )
             sorted_scores, sorted_indices = torch.sort(final_scores, descending=True)
-            best_scores, best_idxs = sorted_scores[:5], sorted_indices[:5]
+            best_scores, best_idxs = sorted_scores[:10], sorted_indices[:10]
             # best_score = float(best_scores[0].item())
             # best_doc = candidate_texts[best_idxs[0]]
             # best_weights = dynamic_weights[best_idxs[0]].tolist()
             # print(f"Selected Doc (Index {best_idxs[0]}) | Score: {best_score:.4f}")
             # print(f"Active Intent Weights -> Para:{best_weights[0]:.2f} Broad:{best_weights[1]:.2f} Tech:{best_weights[2]:.2f} Expl:{best_weights[3]:.2f}")
             # print("best doc:", best_doc)
-            context_docs = [candidate_texts[idx] for idx in best_idxs.tolist()]
+            context_docs = [candidate_texts[idx].page_content for idx in best_idxs.tolist()]
             context = "\n--------------------------\n".join(context_docs)
-            print(context)
+            # print(context)
+            return {"response_docs": context, "scores": best_scores.tolist()}
 
 rag_engine = RAGEngine()
-import asyncio
+# import asyncio
 
-rag_engine = RAGEngine()
+# rag_engine = RAGEngine()
 
-async def main():
-    result = await rag_engine.process("Red bugs in my flour")
-    print(result)
+# async def main():
+#     result = await rag_engine.process("Red bugs in my flour")
+#     print(result)
 
-asyncio.run(main())
+# asyncio.run(main())
 
 async def get_rag_engine():
     return rag_engine

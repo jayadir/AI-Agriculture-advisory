@@ -8,7 +8,6 @@ import os
 # --- MEMORY CONFIG ---
 # Set this to True to prevent GPU OOM crashes on laptops
 FORCE_CPU = True 
-
 class JinaEmbedder(Embeddings):
     _instance = None
 

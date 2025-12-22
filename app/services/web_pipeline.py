@@ -117,3 +117,5 @@ def answer_with_web_context(query: str, k: int = 5) -> Tuple[str, List[Dict[str,
     summaries = extract_structured_summaries(chunks)
     return answer, summaries
 
+async def invoke_web_pipeline(query:str):
+    pass
