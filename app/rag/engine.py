@@ -182,7 +182,13 @@ class RAGEngine:
             context = "\n--------------------------\n".join(context_docs)
             # print(context)
             return {"response_docs": context, "scores": best_scores.tolist()}
-
+    def add_to_knowledge_base(self, documents):
+        if not self.vectorstore:
+            print("Vectorstore not initialized. Cannot add documents.")
+            return
+        self.vectorstore.add_documents(documents)
+        self.vectorstore.save_local("artifacts/vector_db/agri_faiss_index")
+        print(f"Added {len(documents)} documents to the knowledge base.")
 rag_engine = RAGEngine()
 # import asyncio
 

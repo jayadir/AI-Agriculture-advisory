@@ -5,23 +5,26 @@ from datetime import datetime
 from pymongo import MongoClient
 from dotenv import load_dotenv
 from langgraph.prebuilt import create_react_agent
-from app.services.llm import _get_model
 from langchain.prompts import ChatPromptTemplate
 from langgraph.checkpoint.mongodb import MongoDBSaver
 from langchain_core.messages import ToolMessage
-from langchain_tavily import TavilySearch
 from langchain.schema import Document
+from langchain_community.vectorstores import FAISS
 
+from tavily import TavilyClient
+
+from app.services.llm import _get_model
 from app.core.config import settings
 from app.tools.retrieval_tool import retrieval_tool
 from app.tools.web_search_tool import web_search_tool
 from app.rag.embeddings import get_embedder
+from app.utils.text_cleaner import processing_chain
 
 
 
 
 load_dotenv()
-tavily_client=TavilySearch()  
+tavily_client=TavilyClient()  
 client = MongoClient(settings.MONGODB_URI)
 checkpointer=MongoDBSaver(client=client,db_name=settings.DB_NAME)
 agent=None
@@ -88,6 +91,7 @@ def learn_from_session(thread_id:str):
     print(f"[Background] Scraping {len(urls_to_scrape)} URLs: {urls_to_scrape}")
     
     new_docs=[]
+    docs_to_embed=[]
     try:
         response=tavily_client.extract(urls=list(urls_to_scrape))
         for result in response.get("results",[]):
@@ -103,17 +107,27 @@ def learn_from_session(thread_id:str):
                     "title": "Web Search Result", 
                     "ingested_at": str(datetime.utcnow()),
                     "thread_origin": thread_id,
-                    "type": "tavily_extracted_content"
+                    "type": "tavily_extracted_content",
+                    "document_id": str(uuid.uuid4())
                 }
             )
+            chunks = processing_chain.invoke(doc.page_content)
+            for i,chunk in enumerate(chunks):
+                chunk_doc=Document(
+                    page_content=chunk,
+                    metadata=doc.metadata | {"chunk_index": i, "chunk_id": str(uuid.uuid4())}
+                )
+                docs_to_embed.append(chunk_doc) 
             new_docs.append(doc)
+        if docs_to_embed:
+            embedder=get_embedder()
+            vectorStore=
     except Exception as e:
         print(f"[Background] Tavily Extract Error: {e}")
         return
     
-    if new_docs:
-        try:
-            embedder=get_embedder()
+
+            
             
         
                     
