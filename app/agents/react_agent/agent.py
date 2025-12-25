@@ -50,7 +50,7 @@ def get_react_agent(tools):
 
             You must ALWAYS follow this sequence:
             First, call retrieval_tool.
-            If and only if the retrieved documents are missing, incomplete, or not relevant to the user query, then call the web_search tool.
+            If and only if the retrieved documents are missing, incomplete, or not relevant to the user query, then call the web_search tool and you are free to call web_search multiple times if needed.
             Never skip the retrieval_tool.
 
             You are strictly forbidden from answering using your own knowledge.
@@ -66,10 +66,11 @@ def get_react_agent(tools):
 
             If no India-specific information is found, state that clearly instead of answering.
 
-            Your final response must be in plain text only.
+            **Your final response must be in plain text only and it should be concise,straightforward direct answer to the question without any additional info**.
             Do not use markdown, formatting symbols, bullet points, or special styling.
             Do not include headings.
             Do not include emojis.
+            Do not include any links and references in your final answer.
         """
         ),
         ("human", "{user_query}")

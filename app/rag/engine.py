@@ -6,6 +6,7 @@ from app.rag.embeddings import get_embedder
 from app.services.llm import generate_response
 from app.rag.query_expander import DeepResidualExpander
 from app.rag.router import NeuralRouterFusion
+from app.utils.torch_numpy import tensor_to_numpy
 CONFIDENCE_THRESHOLD = 0.6
 RETRIEVAL_K = 5
 
@@ -14,8 +15,8 @@ MAX_CONTEXT_DOCS = 3
 MAX_CONTEXT_DOC_CHARS = 1200
 MAX_CONTEXT_TOTAL_CHARS = 4500
 
-# Match the setting in embeddings.py
-FORCE_CPU = True 
+# Device selection: set `FORCE_CPU=1` in the environment to force CPU.
+FORCE_CPU = os.getenv("FORCE_CPU", "0").strip().lower() in ("1", "true", "yes", "y", "on")
 
 class RAGEngine:
     def __init__(self):
@@ -116,6 +117,10 @@ class RAGEngine:
         q_base_tensor= self.embedder.model.encode(
             [query], prompt_name="retrieval.query", convert_to_tensor=True
         ).to(self.device)
+        # SentenceTransformers may return bf16/fp16 under mixed precision on GPU.
+        # Keep downstream math/FAISS inputs stable by using float32.
+        if q_base_tensor.dtype in (torch.bfloat16, torch.float16):
+            q_base_tensor = q_base_tensor.to(dtype=torch.float32)
         with torch.no_grad():
             v_para, v_broad, v_tech, v_expl = self.expander(q_base_tensor)
             scale_factor = 3.0 
@@ -125,11 +130,11 @@ class RAGEngine:
             v_tech = q_base_tensor + (v_tech - q_base_tensor) * scale_factor
             v_expl = q_base_tensor + (v_expl - q_base_tensor) * scale_factor
         query_vectors={
-            "base": q_base_tensor.cpu().numpy(),
-            "para": v_para.cpu().numpy(),
-            "broad": v_broad.cpu().numpy(), 
-            "tech": v_tech.cpu().numpy(),
-            "expl": v_expl.cpu().numpy()
+            "base": tensor_to_numpy(q_base_tensor),
+            "para": tensor_to_numpy(v_para),
+            "broad": tensor_to_numpy(v_broad), 
+            "tech": tensor_to_numpy(v_tech),
+            "expl": tensor_to_numpy(v_expl)
         }
         # Debug: Check how different the variants are from the base
         # sim_tech = torch.nn.functional.cosine_similarity(q_base_tensor, v_tech)
@@ -158,6 +163,8 @@ class RAGEngine:
         d_embs_tensor = self.embedder.model.encode(
             candidate_texts, prompt_name="retrieval.passage", convert_to_tensor=True
         ).to(self.device)
+        if d_embs_tensor.dtype in (torch.bfloat16, torch.float16):
+            d_embs_tensor = d_embs_tensor.to(dtype=torch.float32)
         with torch.no_grad():
             s_base=torch.mm(q_base_tensor,d_embs_tensor.t())[0]
             s_para=torch.mm(v_para,d_embs_tensor.t())[0]

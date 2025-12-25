@@ -5,3 +5,5 @@ venv
 new_env
 notebooks/.ipynb_checkpoints
 /notebooks
+/tests
+logs.txt

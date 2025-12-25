@@ -15,6 +15,10 @@ class SEBlock(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
+        # Keep dtype/device consistent for Linear ops (prevents bf16/fp32 mismatch on GPU).
+        target_weight = self.fc1.weight
+        if x.dtype != target_weight.dtype or x.device != target_weight.device:
+            x = x.to(device=target_weight.device, dtype=target_weight.dtype)
         # Squeeze (Global Information)
         # Note: Since input is already a 1D vector per batch, we just project down
         y = self.relu(self.fc1(x))

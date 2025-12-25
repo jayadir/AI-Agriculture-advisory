@@ -6,7 +6,7 @@ load_dotenv()
 tavily = TavilySearch(
     max_results=5,
     topic="general",
-    include_raw_content=True
+    # include_raw_content=True
 )
 
 @lc_tool("web_search")

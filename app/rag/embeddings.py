@@ -5,9 +5,9 @@ import torch
 import gc
 import os
 
-# --- MEMORY CONFIG ---
-# Set this to True to prevent GPU OOM crashes on laptops
-FORCE_CPU = True 
+# --- DEVICE CONFIG ---
+# Set `FORCE_CPU=1` in the environment to force CPU (useful for low-VRAM GPUs).
+FORCE_CPU = os.getenv("FORCE_CPU", "0").strip().lower() in ("1", "true", "yes", "y", "on")
 class JinaEmbedder(Embeddings):
     _instance = None
 
