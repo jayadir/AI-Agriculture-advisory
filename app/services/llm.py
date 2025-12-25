@@ -19,13 +19,14 @@ SYSTEM_PROMPT = (
 )
 model=None
 def _get_model() :
+    global model
     model_name = os.getenv("LLM_MODEL")
     if os.getenv("LLM_PROVIDER","GROQ")=="GROQ":
         api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
             raise RuntimeError("Missing GROQ_API_KEY in environment.")
         # Default small instruct model; adjust as needed
-        global model
+        # global model
         if model is None:
             model = ChatGroq(api_key=api_key, model_name=model_name)
         return model
@@ -33,12 +34,12 @@ def _get_model() :
         google_api_key=os.getenv("GOOGLE_API_KEY")
         if not google_api_key:
             raise RuntimeError("Missing GOOGLE_API_KEY in environment.")
-        global model
+        # global model
         if model is None:
             model = ChatGoogleGenerativeAI(google_api_key=google_api_key, model="gemini-pro")
         return model
     elif os.getenv("LLM_PROVIDER")=="OLLAMA":
-        global model
+        # global model
         if model is None:
             model = ChatOllama(model=model_name)
         return model
