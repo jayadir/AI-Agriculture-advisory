@@ -23,19 +23,31 @@ class JinaEmbedder(Embeddings):
                 cls._instance.device = "cuda" if torch.cuda.is_available() else "cpu"
             
             print(f"⏳ Loading Jina Embeddings V3 on {cls._instance.device}...")
+
+            # Force a safe attention backend on Windows/CPU.
+            # This avoids rare rotary/flash attention shape mismatches.
+            os.environ.setdefault("TRANSFORMERS_ATTENTION_IMPLEMENTATION", "eager")
             
             # 2. Aggressive Cleanup before loading
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             gc.collect()
 
-            # 3. Load Model with Flash Attention Disabled (Fixes Windows freeze)
-            cls._instance.model = SentenceTransformer(
-                "jinaai/jina-embeddings-v3", 
-                trust_remote_code=True,
-                device=cls._instance.device,
-                
-            )
+            # 3. Load Model (prefer eager attention)
+            try:
+                cls._instance.model = SentenceTransformer(
+                    "jinaai/jina-embeddings-v3",
+                    trust_remote_code=True,
+                    device=cls._instance.device,
+                    model_kwargs={"attn_implementation": "eager"},
+                )
+            except TypeError:
+                # Older Transformers/SentenceTransformers may not support model_kwargs.
+                cls._instance.model = SentenceTransformer(
+                    "jinaai/jina-embeddings-v3",
+                    trust_remote_code=True,
+                    device=cls._instance.device,
+                )
             print(f"✅ Jina V3 Loaded Successfully")
             
         return cls._instance

@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Tuple
 
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.vectorstores import FAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 
 from app.rag.embeddings import get_embedder

@@ -6,6 +6,7 @@ from app.rag.engine import get_rag_engine,RAGEngine
 from app.models.user import UserInDB
 from datetime import datetime
 from app.services.web_pipeline import invoke_web_pipeline
+from app.agents.react_agent.agent import chat_with_agent, learn_from_session_bg
 from typing import Optional
 from app.services.llm import generate_response, classify_data_quality
 
@@ -30,19 +31,16 @@ async def handle_gsm_webhook(
         new_user = UserInDB(phone_number=phone, full_name="Guest Farmer")
         await db["users"].insert_one(new_user.model_dump(by_alias=True))
     
-    context_docs = await engine.process(query_text)
+    # context_docs = await engine.process(query_text)
     
-    is_context_relevant = await classify_data_quality(query_text, context_docs)
-    if not is_context_relevant:
-        context_docs=await invoke_web_pipeline(query_text)
-    answer_text = await generate_response(query_text,context_docs)
-    
+    # is_context_relevant = await classify_data_quality(query_text, context_docs)
+    # if not is_context_relevant:
+    #     context_docs=await invoke_web_pipeline(query_text)
+    # answer_text = await generate_response(query_text,context_docs)
+    answer_text=chat_with_agent(phone,query_text)
     background_tasks.add_task(
-        log_interaction, 
-        db, 
-        phone, 
-        query_text, 
-        answer_text["response"] if isinstance(answer_text, dict) and "response" in answer_text else answer_text
+        learn_from_session_bg,
+        answer_text["thread_id"],
     )
 
     return answer_text

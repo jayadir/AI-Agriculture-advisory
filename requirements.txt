@@ -19,6 +19,8 @@ langchain-community
 langchain-groq
 langgraph-checkpoint-mongodb
 langchain-google-genai
+langchain-ollama
+ollama
 langchain-tavily
 beautifulsoup4
 duckduckgo-search

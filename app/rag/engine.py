@@ -9,6 +9,11 @@ from app.rag.router import NeuralRouterFusion
 CONFIDENCE_THRESHOLD = 0.6
 RETRIEVAL_K = 5
 
+# Keep tool output small enough for hosted LLM token limits.
+MAX_CONTEXT_DOCS = 3
+MAX_CONTEXT_DOC_CHARS = 1200
+MAX_CONTEXT_TOTAL_CHARS = 4500
+
 # Match the setting in embeddings.py
 FORCE_CPU = True 
 
@@ -178,8 +183,27 @@ class RAGEngine:
             # print(f"Selected Doc (Index {best_idxs[0]}) | Score: {best_score:.4f}")
             # print(f"Active Intent Weights -> Para:{best_weights[0]:.2f} Broad:{best_weights[1]:.2f} Tech:{best_weights[2]:.2f} Expl:{best_weights[3]:.2f}")
             # print("best doc:", best_doc)
-            context_docs = [candidate_texts[idx].page_content for idx in best_idxs.tolist()]
-            context = "\n--------------------------\n".join(context_docs)
+            selected_texts = []
+            total_chars = 0
+            for idx in best_idxs.tolist()[:MAX_CONTEXT_DOCS]:
+                text = candidate_texts[idx]
+                if not isinstance(text, str):
+                    text = str(text)
+                text = text[:MAX_CONTEXT_DOC_CHARS]
+
+                # Enforce total size cap
+                if total_chars + len(text) > MAX_CONTEXT_TOTAL_CHARS:
+                    remaining = MAX_CONTEXT_TOTAL_CHARS - total_chars
+                    if remaining <= 0:
+                        break
+                    text = text[:remaining]
+
+                selected_texts.append(text)
+                total_chars += len(text)
+                if total_chars >= MAX_CONTEXT_TOTAL_CHARS:
+                    break
+
+            context = "\n--------------------------\n".join(selected_texts)
             # print(context)
             return {"response_docs": context, "scores": best_scores.tolist()}
     def add_to_knowledge_base(self, documents):
