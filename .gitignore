@@ -1,9 +1,1 @@
-.env
-venv
-*__pycache__/
-/backup
-new_env
-notebooks/.ipynb_checkpoints
-/notebooks
-/tests
-logs.txt
+notebooks
