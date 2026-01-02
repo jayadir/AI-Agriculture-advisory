@@ -1,0 +1,21 @@
+fastapi
+uvicorn
+python-multipart
+
+librosa
+soundfile
+numpy
+scipy
+
+
+torch
+torchaudio
+transformers
+# speechbrain
+accelerate
+
+ruamel.yaml<0.19
+
+sentencepiece
+protobuf
+tiktoken
