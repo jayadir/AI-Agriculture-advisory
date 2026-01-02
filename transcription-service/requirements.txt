@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 python-multipart
+python-dotenv
 
 librosa
 soundfile
@@ -10,6 +11,7 @@ scipy
 
 torch
 torchaudio
+torchcodec
 transformers
 # speechbrain
 accelerate
@@ -19,3 +21,5 @@ ruamel.yaml<0.19
 sentencepiece
 protobuf
 tiktoken
+
+boto3
