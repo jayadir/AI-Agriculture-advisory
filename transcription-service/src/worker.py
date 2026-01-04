@@ -17,7 +17,7 @@ sqs = boto3.client("sqs", region_name=REGION)
 s3 = boto3.client("s3", region_name=REGION)
 
 def main():
-    print("[Worker] Initializing AI Models... (This takes VRAM)")
+    print("[Worker] Initializing AI Models...")
     asr_engine = CodeSwitchASR()
     print("[Worker] Models Ready. Waiting for SQS messages...")
 
@@ -56,15 +56,28 @@ def main():
             transcription_text = asr_engine.process_file(local_filename)
             print(f"[Worker] Transcription Result: {transcription_text[:50]}...")
 
-            txt_key = "transcriptions/"+file_key + ".txt"
-            s3.put_object(
-                Bucket=bucket_name,
-                Key=txt_key,
-                Body=transcription_text,
-                ContentType="text/plain",
-            )
-            print(f"[Worker] Uploaded text to: {txt_key}")
+            # txt_key = "transcriptions/"+file_key + ".txt"
+            # s3.put_object(
+            #     Bucket=bucket_name,
+            #     Key=txt_key,
+            #     Body=transcription_text,
+            #     ContentType="text/plain",
+            # )
+            
+            # print(f"[Worker] Uploaded text to: {txt_key}")
 
+            ai_agent_payload = {
+                "transcription": transcription_text,
+                "original_file": file_key,
+                "bucket": bucket_name,
+                "caller-number":s3.head_object(Bucket=bucket_name, Key=file_key)['Metadata']['caller-number'],
+                "source":"call"
+            }
+            sqs.send_message(
+                QueueUrl=os.getenv("AGENT_JOBS_QUEUE_URL"),
+                MessageBody=json.dumps(ai_agent_payload)
+            )
+            print(f"[Worker] Sent text to AI Agent Queue")
             if os.path.exists(local_filename):
                 os.remove(local_filename)
 

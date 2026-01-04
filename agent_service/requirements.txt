@@ -32,3 +32,4 @@ einops
 numpy
 pandas
 tqdm
+boto3
