@@ -9,11 +9,9 @@ numpy
 scipy
 
 
-torch
-torchaudio
-torchcodec
 transformers
-# speechbrain
+
+git+https://github.com/speechbrain/speechbrain.git@develop
 accelerate
 
 ruamel.yaml<0.19

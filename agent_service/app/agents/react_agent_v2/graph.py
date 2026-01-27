@@ -18,10 +18,9 @@ from app.agents.react_agent_v2.nodes import (
     generate_response_node,
 )
 from app.agents.react_agent_v2.edges import should_web_search, should_continue_search
-
+# from app.agents.react_agent_v2.learning import learn_from_session
 
 def _get_checkpointer() -> Optional[object]:
-    """Prefer MongoDBSaver if configured; fall back to in-memory for quick local tests."""
     mongo_url = getattr(settings, "MONGO_URL", None)
     db_name = getattr(settings, "DB_NAME", None)
     if not mongo_url or not db_name:

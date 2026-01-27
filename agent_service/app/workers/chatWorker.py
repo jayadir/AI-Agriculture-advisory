@@ -8,7 +8,7 @@ from datetime import datetime
 from app.db.mongodb import get_database
 from app.models.user import UserInDB
 from app.agents.react_agent_v2.graph import chat_with_agent
-
+from app.agents.react_agent_v2.learning import learn_from_session
 from twilio.rest import Client
 
 SQS_QUEUE_URL=os.getenv("AGENT_JOBS_QUEUE_URL")
@@ -32,11 +32,11 @@ async def process_message(message,db):
             logger.warning("Invalid message payload, missing phone or transcription.")
             return
         
-        user=await db["users"].find_one({"phone_number":phone})
-        if not user:
-            logger.info(f"New Farmer detected: {phone}")
-            new_user = UserInDB(phone_number=phone, full_name="Guest Farmer")
-            await db["users"].insert_one(new_user.model_dump(by_alias=True))
+        # user=await db["users"].find_one({"phone_number":phone})
+        # if not user:
+        #     logger.info(f"New Farmer detected: {phone}")
+        #     new_user = UserInDB(phone_number=phone, full_name="Guest Farmer")
+        #     await db["users"].insert_one(new_user.model_dump(by_alias=True))
             
         response_text=chat_with_agent(phone,query)
         thread_id=response_text.get("thread_id")
@@ -47,6 +47,10 @@ async def process_message(message,db):
         if thread_id:
             asyncio.create_task(learn_from_session(thread_id))
             logger.info("Background learning started")
+            
+    except Exception as e:
+        logger.error(f"Error processing message: {e}")
+        
 def send_sms_reply(to_number,text):
     try:
         message=twilio_client.messages.create(
@@ -75,7 +79,7 @@ def trigger_call(to_number, text_response):
     try:
         call = twilio_client.calls.create(
             to=to_number,
-            from_=TWILIO_PHONE_NUMBER,
+            from_=os.getenv("TWILIO_PHONE_NUMBER"),
             twiml=twiml_instructions
         )
         print(f"   [Call] Call started: {call.sid}")
@@ -95,7 +99,7 @@ async def main():
             )
             if "Messages" not in response:
                 continue
-            for message in response["Messages"]:
+            for msg in response["Messages"]:
                 receipt_handle = msg['ReceiptHandle']
                 body = msg['Body']
                 
@@ -108,7 +112,7 @@ async def main():
 
         except Exception as e:
             logger.error(f"Critical Worker Loop Error: {e}")
-            await asyncio.sleep(5) # Prevent CPU spike on loop error
+            await asyncio.sleep(5)
 
 if __name__ == "__main__":
     asyncio.run(main())
