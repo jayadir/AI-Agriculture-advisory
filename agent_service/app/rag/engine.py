@@ -7,8 +7,15 @@ from app.services.llm import generate_response
 from app.rag.query_expander import DeepResidualExpander
 from app.rag.router import NeuralRouterFusion
 from app.utils.torch_numpy import tensor_to_numpy
+from app.models.lign_ranker import get_lign_ranker
 CONFIDENCE_THRESHOLD = 0.6
 RETRIEVAL_K = 5
+
+# LIGN re-ranking configuration
+LIGN_ENABLED = os.getenv("LIGN_ENABLED", "1").strip().lower() in ("1", "true", "yes", "y", "on")
+LIGN_RETRIEVAL_K = 20  # Retrieve more candidates for re-ranking
+LIGN_TOP_K = 5  # Return top-5 after re-ranking
+LIGN_THRESHOLD = 0.3  # Minimum relevance score (0.0-1.0)
 
 # Keep tool output small enough for hosted LLM token limits.
 MAX_CONTEXT_DOCS = 3
@@ -29,6 +36,29 @@ class RAGEngine:
         print(f"Initializing RAG Engine on {self.device}...")
         
         self.embedder = get_embedder()
+        
+        # Load FAISS
+        vector_db_path = "artifacts/vector_db/agri_faiss_index"
+        if os.path.exists(vector_db_path):
+            self.vectorstore = FAISS.load_local(
+                vector_db_path, 
+                self.embedder,
+                allow_dangerous_deserialization=True
+            )
+            print(f"FAISS Index Loaded")
+        else:
+            self.vectorstore = None
+            print(f"Vector DB not found at {vector_db_path}")
+
+        # Load LIGN re-ranker (lazy initialization on first use)
+        self.lign_ranker = None
+        if LIGN_ENABLED:
+            try:
+                self.lign_ranker = get_lign_ranker()
+                print(f"LIGN Re-ranker Enabled (k={LIGN_RETRIEVAL_K}, top_k={LIGN_TOP_K}, threshold={LIGN_THRESHOLD})")
+            except Exception as e:
+                print(f"Failed to load LIGN ranker: {e}")
+                self.lign_ranker = None
         
         # Load FAISS
         vector_db_path = "artifacts/vector_db/agri_faiss_index"
@@ -147,12 +177,16 @@ class RAGEngine:
         # print(f"Similarity (Base <-> Expl): {sim_expl.item():.4f}")
         
         unique_docs={}
+        
+        # Adjust retrieval k based on LIGN configuration
+        retrieval_k = LIGN_RETRIEVAL_K if self.lign_ranker else RETRIEVAL_K
+        
         for name,vec_np in query_vectors.items():
-            results=self.vectorstore.similarity_search_by_vector(vec_np[0], k=RETRIEVAL_K)
+            results=self.vectorstore.similarity_search_by_vector(vec_np[0], k=retrieval_k)
             
             # candidates=[doc.page_content for doc in results]
             # docs="\n--------------------\n".join(candidates)
-            # print(f"Top-{RETRIEVAL_K} docs for '{name}' query vector:\n{docs}\n")
+            # print(f"Top-{retrieval_k} docs for '{name}' query vector:\n{docs}\n")
             for doc in results:
                 if doc.page_content not in unique_docs:
                     unique_docs[doc.page_content] = doc
@@ -160,6 +194,29 @@ class RAGEngine:
         if not candidate_texts:
             return {"response": "No data found.", "source": "local-empty"}
         print(f"Retrieved {len(candidate_texts)} unique documents.")
+        
+        # === LIGN RE-RANKING ===
+        if self.lign_ranker:
+            print(f"[LIGN] Re-ranking {len(candidate_texts)} candidates...")
+            scored_docs = self.lign_ranker.batch_score(query, candidate_texts)
+            
+            # Filter by threshold and take top-k
+            filtered_docs = [(doc, score) for doc, score in scored_docs if score >= LIGN_THRESHOLD]
+            top_docs = filtered_docs[:LIGN_TOP_K]
+            
+            if not top_docs:
+                print(f"[LIGN] No documents passed threshold {LIGN_THRESHOLD}")
+                return {"response": "No relevant data found.", "source": "lign-filtered"}
+            
+            # Log re-ranking results
+            print(f"[LIGN] Kept {len(top_docs)}/{len(candidate_texts)} docs (threshold={LIGN_THRESHOLD})")
+            for i, (doc, score) in enumerate(top_docs[:3]):
+                preview = doc[:80].replace('\n', ' ')
+                print(f"  [{i+1}] Score: {score:.3f} | {preview}...")
+            
+            # Update candidate_texts to re-ranked top-k
+            candidate_texts = [doc for doc, score in top_docs]
+        
         d_embs_tensor = self.embedder.model.encode(
             candidate_texts, prompt_name="retrieval.passage", convert_to_tensor=True
         ).to(self.device)

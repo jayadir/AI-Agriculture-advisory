@@ -255,6 +255,23 @@ def generate_response_node(state: AgentState) -> AgentState:
         context_parts.append(f"=== Web Search Results ===\n{state['web_search_results']}\n")
 
     context = "\n".join(context_parts)
+    
+    # Use manually passed chat history for better control
+    history_context = ""
+    chat_history = state.get("chat_history", [])
+    if chat_history:
+        history_lines = []
+        for msg in chat_history:
+            role = msg.get("role", "")
+            content = msg.get("content", "")
+            if role == "user":
+                history_lines.append(f"User: {content}")
+            elif role == "assistant":
+                history_lines.append(f"Assistant: {content}")
+        
+        if history_lines:
+            history_context = "\n=== Previous Conversation (Last 10 Messages) ===\n" + "\n".join(history_lines) + "\n"
+            print(f"Using {len(chat_history)} manually provided messages for context")
 
     system_prompt = """You are an agriculture expert assistant specialized in Indian farming conditions.
 
@@ -264,6 +281,7 @@ CRITICAL RULES:
 3. If no India-specific information is found, state that clearly.
 4. Plain text only (no markdown, no bullets).
 5. The responses will be played back as an audio message to the user so keep it like a natural spoken response, without awkward pauses or unnatural phrasing.
+6. Use the previous conversation history to maintain context and provide relevant follow-up answers.
 
 ADDITIONAL AUDIO CLARITY RULES:
 1. Do NOT use any symbols, formulas, chemical names, or abbreviations such as N, P, K, P2O5, K2O, kg/ha, hectare.
@@ -282,7 +300,7 @@ ADDITIONAL AUDIO CLARITY RULES:
 
     user_prompt = f"""Based on the following context, answer this question about Indian agriculture:
 
-{context}
+{history_context}{context}
 
 Question: {state['user_query']}"""
 

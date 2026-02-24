@@ -3,7 +3,8 @@ import json
 import boto3
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
+from bson import ObjectId
 
 from app.db.mongodb import get_database
 from app.models.user import UserInDB
@@ -19,6 +20,56 @@ twilio_client=Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOK
 logging.basicConfig(level=logging.INFO)
 logger=logging.getLogger("AI_Worker")
 
+async def save_chat_session(db, phone: str, thread_id: str, query: str, response: str):
+    """
+    Save or update chat session with new message.
+    """
+    try:
+        from app.models.chat import Message
+        
+        user_msg = Message(role="user", content=query, timestamp=datetime.now(timezone.utc))
+        assistant_msg = Message(role="assistant", content=response, timestamp=datetime.now(timezone.utc))
+        
+        # Check if session exists
+        existing_session = await db["chat_sessions"].find_one(
+            {"user_phone": phone},
+            sort=[("updated_at", -1)]
+        )
+        
+        if existing_session and existing_session.get("thread_id") == thread_id:
+            # Update existing session
+            await db["chat_sessions"].update_one(
+                {"_id": existing_session["_id"]},
+                {
+                    "$push": {
+                        "messages": {
+                            "$each": [user_msg.model_dump(), assistant_msg.model_dump()]
+                        }
+                    },
+                    "$set": {
+                        "updated_at": datetime.now(timezone.utc),
+                        "summary": query[:50]  # Update summary with latest query
+                    }
+                }
+            )
+            logger.info(f"Updated chat session for {phone}")
+        else:
+            # Create new session
+            session_dict = {
+                "_id": ObjectId(),
+                "user_phone": phone,
+                "thread_id": thread_id,
+                "messages": [user_msg.model_dump(), assistant_msg.model_dump()],
+                "summary": query[:50],
+                "updated_at": datetime.now(timezone.utc)
+            }
+            
+            await db["chat_sessions"].insert_one(session_dict)
+            logger.info(f"Created new chat session for {phone}")
+            
+    except Exception as e:
+        logger.error(f"Error saving chat session: {e}")
+
 async def process_message(message,db):
     try:
         payload=json.loads(message)
@@ -32,14 +83,32 @@ async def process_message(message,db):
             logger.warning("Invalid message payload, missing phone or transcription.")
             return
         
-        # user=await db["users"].find_one({"phone_number":phone})
-        # if not user:
-        #     logger.info(f"New Farmer detected: {phone}")
-        #     new_user = UserInDB(phone_number=phone, full_name="Guest Farmer")
-        #     await db["users"].insert_one(new_user.model_dump(by_alias=True))
-            
-        response_text=chat_with_agent(phone,query)
-        thread_id=response_text.get("thread_id")
+        # Check if there's an existing chat session for this phone number
+        existing_session = await db["chat_sessions"].find_one(
+            {"user_phone": phone},
+            sort=[("updated_at", -1)]  # Get most recent session
+        )
+        
+        thread_id = None
+        chat_history = []
+        
+        if existing_session:
+            thread_id = existing_session.get("thread_id")
+            # Get last 10 messages (only user queries and AI responses)
+            messages = existing_session.get("messages", [])
+            # Filter and get last 10 user-assistant pairs
+            chat_history = messages[-10:] if len(messages) > 10 else messages
+            logger.info(f"Continuing existing chat session with thread_id: {thread_id}")
+        else:
+            logger.info(f"Starting new chat session for {phone}")
+        
+        # Pass explicit chat history for more control over context
+        response_text = chat_with_agent(phone, query, thread_id, chat_history)
+        thread_id = response_text.get("thread_id")
+        
+        # Save/update chat session in database
+        await save_chat_session(db, phone, thread_id, query, response_text.get("response", ""))
+        
         if source=="sms":
             send_sms_reply(phone,response_text.get("response",""))
         else:

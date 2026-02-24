@@ -14,6 +14,7 @@ class Message(BaseModel):
 class ChatSession(BaseModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     user_phone: str
+    thread_id: Optional[str] = None  # LangGraph thread_id for continuing conversations
     messages: List[Message] = []
     summary: Optional[str] = None # For quick history lookup
     updated_at: datetime = Field(default_factory=datetime.utcnow)

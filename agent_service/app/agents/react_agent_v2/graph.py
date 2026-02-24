@@ -76,17 +76,26 @@ def create_agriculture_agent():
     app = workflow.compile(checkpointer=_get_checkpointer())
     return app
 
-def chat_with_agent(user_id: str, query: str, thread_id: str = None) -> Dict[str, Any]:
+def chat_with_agent(user_id: str, query: str, thread_id: str = None, chat_history: list = None) -> Dict[str, Any]:
     if thread_id is None:
         thread_id = str(uuid.uuid4())
         print(f"New thread created with id: {thread_id}")
+    else:
+        print(f"Continuing existing thread with id: {thread_id}")
 
     config = {"configurable": {"thread_id": thread_id}}
     agent = create_agriculture_agent()
 
-    initial_state = {"messages": [HumanMessage(content=query)], "user_query": query}
+    # Pass explicit chat history for better control over context
+    initial_state = {
+        "messages": [HumanMessage(content=query)], 
+        "user_query": query,
+        "chat_history": chat_history or []  # Explicitly pass chat history
+    }
 
     print(f"\n{'='*60}\nAgriculture Agent Processing Query\n{'='*60}\n")
+    if chat_history:
+        print(f"Using {len(chat_history)} previous messages for context")
 
     final_state = None
     for state in agent.stream(initial_state, config=config):

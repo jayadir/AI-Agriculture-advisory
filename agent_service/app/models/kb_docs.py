@@ -11,6 +11,7 @@ class CandidateMetadata(BaseModel):
     document_id: str = Field(..., description="UUID connecting all chunks to one parent webpage")
     chunk_index: int = Field(default=0, description="Sequence order of this chunk")
     chunk_id: str = Field(..., description="Unique UUID for this specific text block")
+    lign_score: Optional[float] = Field(default=None, description="LIGN semantic relevance score (0.0 - 1.0) against the source query")
     
 class CandidateKnowledge(BaseModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")

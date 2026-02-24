@@ -1,1 +1,20 @@
 notebooks
+
+# Large model files (>100MB)
+agent_service/artifacts/models/*.pth
+agent_service/artifacts/models/*.pt
+agent_service/artifacts/models/*.bin
+agent_service/artifacts/models/*.onnx
+
+# Python environments
+new_env/
+new_venv/
+venv/
+env/
+.venv/
+
+# Vector databases
+agent_service/artifacts/vector_db/
+
+# Logs
+agent_service/logs.txt

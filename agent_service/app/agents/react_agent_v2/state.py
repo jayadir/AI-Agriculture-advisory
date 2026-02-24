@@ -1,4 +1,4 @@
-from typing import List, TypedDict
+from typing import List, TypedDict, Any
 from langchain_core.messages import BaseMessage
 
 class AgentState(TypedDict):
@@ -15,3 +15,4 @@ class AgentState(TypedDict):
     needs_web_search: bool
     final_response: str
     iteration_count: int
+    chat_history: List[Any]  # Manually managed conversation history (last 10 messages)
