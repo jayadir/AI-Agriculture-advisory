@@ -76,26 +76,21 @@ def create_agriculture_agent():
     app = workflow.compile(checkpointer=_get_checkpointer())
     return app
 
-def chat_with_agent(user_id: str, query: str, thread_id: str = None, chat_history: list = None) -> Dict[str, Any]:
-    if thread_id is None:
-        thread_id = str(uuid.uuid4())
-        print(f"New thread created with id: {thread_id}")
-    else:
-        print(f"Continuing existing thread with id: {thread_id}")
+def chat_with_agent(user_id: str, query: str, chat_history: list = None) -> Dict[str, Any]:
+    print(f"\n{'='*60}\nAgriculture Agent Processing Query\n{'='*60}\n")
 
-    config = {"configurable": {"thread_id": thread_id}}
     agent = create_agriculture_agent()
+    config = {"configurable": {"thread_id": user_id}}  # still needed by LangGraph internally
 
-    # Pass explicit chat history for better control over context
+    # Pass explicit chat history for context
     initial_state = {
-        "messages": [HumanMessage(content=query)], 
+        "messages": [HumanMessage(content=query)],
         "user_query": query,
-        "chat_history": chat_history or []  # Explicitly pass chat history
+        "chat_history": chat_history or []
     }
 
-    print(f"\n{'='*60}\nAgriculture Agent Processing Query\n{'='*60}\n")
     if chat_history:
-        print(f"Using {len(chat_history)} previous messages for context")
+        print(f"Using {len(chat_history) // 2} previous turns for context")
 
     final_state = None
     for state in agent.stream(initial_state, config=config):
@@ -110,7 +105,7 @@ def chat_with_agent(user_id: str, query: str, thread_id: str = None, chat_histor
 
     print(f"\n{'='*60}\nAgent Execution Complete\n{'='*60}\n")
 
-    return {"user_id": user_id, "thread_id": thread_id, "response": final_response}
+    return {"user_id": user_id, "response": final_response}
 
 
 

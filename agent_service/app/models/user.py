@@ -12,6 +12,7 @@ class Location(BaseModel):
 class UserBase(BaseModel):
     phone_number: str = Field(..., description="Unique mobile number")
     full_name: Optional[str] = None
+    pincode: Optional[str] = None
     crops: List[str] = []
     location: Optional[Location] = None
 

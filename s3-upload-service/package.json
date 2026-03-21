@@ -13,6 +13,7 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.958.0",
+    "@aws-sdk/client-sqs": "^3.1009.0",
     "@aws-sdk/lib-storage": "^3.958.0",
     "axios": "^1.13.2",
     "bull": "^4.16.5",

@@ -1,33 +1,21 @@
 import torch
 import os
 from langchain_community.vectorstores import FAISS
-from app.rag.residual_selector import ResidualSelector
 from app.rag.embeddings import get_embedder
-from app.services.llm import generate_response
 from app.rag.query_expander import DeepResidualExpander
-from app.rag.router import NeuralRouterFusion
+from app.rag.query_expander_bge import DeepResidualExpanderBGE
+from app.rag.reranker import get_reranker
 from app.utils.torch_numpy import tensor_to_numpy
-from app.models.lign_ranker import get_lign_ranker
-CONFIDENCE_THRESHOLD = 0.6
-RETRIEVAL_K = 5
+from app.core.config import settings
 
-# LIGN re-ranking configuration
-LIGN_ENABLED = os.getenv("LIGN_ENABLED", "1").strip().lower() in ("1", "true", "yes", "y", "on")
-LIGN_RETRIEVAL_K = 20  # Retrieve more candidates for re-ranking
-LIGN_TOP_K = 5  # Return top-5 after re-ranking
-LIGN_THRESHOLD = 0.3  # Minimum relevance score (0.0-1.0)
-
-# Keep tool output small enough for hosted LLM token limits.
-MAX_CONTEXT_DOCS = 3
-MAX_CONTEXT_DOC_CHARS = 1200
-MAX_CONTEXT_TOTAL_CHARS = 4500
+RETRIEVAL_K = 10  # Retrieve 10 docs per query variant
+MAX_CONTEXT_DOCS = settings.RERANKER_TOP_K  # Return top reranked docs for context
 
 # Device selection: set `FORCE_CPU=1` in the environment to force CPU.
 FORCE_CPU = os.getenv("FORCE_CPU", "0").strip().lower() in ("1", "true", "yes", "y", "on")
 
 class RAGEngine:
     def __init__(self):
-        # Ensure we use the same device as the embedder
         if FORCE_CPU:
             self.device = "cpu"
         else:
@@ -36,6 +24,7 @@ class RAGEngine:
         print(f"Initializing RAG Engine on {self.device}...")
         
         self.embedder = get_embedder()
+        self.reranker = get_reranker() if settings.ENABLE_RERANKER else None
         
         # Load FAISS
         vector_db_path = "artifacts/vector_db/agri_faiss_index"
@@ -50,226 +39,162 @@ class RAGEngine:
             self.vectorstore = None
             print(f"Vector DB not found at {vector_db_path}")
 
-        # Load LIGN re-ranker (lazy initialization on first use)
-        self.lign_ranker = None
-        if LIGN_ENABLED:
-            try:
-                self.lign_ranker = get_lign_ranker()
-                print(f"LIGN Re-ranker Enabled (k={LIGN_RETRIEVAL_K}, top_k={LIGN_TOP_K}, threshold={LIGN_THRESHOLD})")
-            except Exception as e:
-                print(f"Failed to load LIGN ranker: {e}")
-                self.lign_ranker = None
-        
-        # Load FAISS
-        vector_db_path = "artifacts/vector_db/agri_faiss_index"
-        if os.path.exists(vector_db_path):
-            self.vectorstore = FAISS.load_local(
-                vector_db_path, 
-                self.embedder,
-                allow_dangerous_deserialization=True
-            )
-            print(f"FAISS Index Loaded")
+        # Dynamically load expander based on embedding model
+        embedding_model = settings.EMBEDDING_MODEL.lower()
+        if embedding_model == "bge":
+            self.expander = DeepResidualExpanderBGE(input_dim=384).to(self.device)
+            expander_path = "artifacts/models/query_expander.pth"
+            print(f"Loading BGE Query Expander (384-dim)...")
         else:
-            self.vectorstore = None
-            print(f"Vector DB not found at {vector_db_path}")
-
-        # Load Model B
-        self.model = ResidualSelector(input_dim=1024).to(self.device)
-        model_path = "artifacts/models/agri_selector_v1.pt"
-        
-        if os.path.exists(model_path):
-            # map_location ensures weights load to CPU if needed
-            state_dict = torch.load(model_path, map_location=self.device)
-            self.model.load_state_dict(state_dict)
-            self.model.eval()
-            print("Agri-Selector Weights Loaded")
-        else:
-            print(f"Model B weights not found")
-
-        self.expander = DeepResidualExpander(input_dim=1024).to(self.device)
-        expander_path = "artifacts/models/deep_residual_expander.pt"
+            self.expander = DeepResidualExpander(input_dim=1024).to(self.device)
+            expander_path = "artifacts/models/deep_residual_expander.pt"
+            print(f"Loading Jina Query Expander (1024-dim)...")
         
         if os.path.exists(expander_path):
             state_dict = torch.load(expander_path, map_location=self.device)
             self.expander.load_state_dict(state_dict)
             self.expander.eval()
-            print("Agri-Expander Weights Loaded")
+            print(f"Query Expander Weights Loaded from {expander_path}")
         else:
-            print(f"Model C weights not found")
+            print(f"Query Expander weights not found at {expander_path}")
 
-        self.router = NeuralRouterFusion(input_dim=1024).to(self.device)
-        router_path = "artifacts/models/neural_router_msmarco.pt"
-        
-        if os.path.exists(router_path):
-            state_dict = torch.load(router_path, map_location=self.device)
-            self.router.load_state_dict(state_dict)
-            self.router.eval()
-            print("Agri-Router Weights Loaded")
-        else:
-            print(f"Model D weights not found")
+    @staticmethod
+    def _doc_preview(text: str, limit: int = 180) -> str:
+        compact = " ".join(text.split())
+        if len(compact) <= limit:
+            return compact
+        return f"{compact[:limit - 3]}..."
+
+    @staticmethod
+    def _doc_source(metadata: dict) -> str:
+        if not metadata:
+            return "unknown"
+        return (
+            metadata.get("source")
+            or metadata.get("title")
+            or metadata.get("file_path")
+            or metadata.get("url")
+            or "unknown"
+        )
+
+    def _print_retrieval_candidates(self, candidates: list[dict], raw_hits: int):
+        print("\n================ RETRIEVAL CANDIDATES ================")
+        print(f"Raw hits: {raw_hits} | Unique candidates: {len(candidates)}")
+        for index, candidate in enumerate(candidates, start=1):
+            hit_summary = ", ".join(
+                f"{hit['query_variant']}#{hit['rank']}" for hit in candidate["retrieval_hits"]
+            )
+            print(
+                f"[{index:02d}] source={candidate['source']} | hits={hit_summary}\n"
+                f"     {self._doc_preview(candidate['content'])}"
+            )
+        print("======================================================\n")
+
+    def _print_reranked_docs(self, reranked_docs: list[dict], top_k: int):
+        print("\n================ RERANKED CANDIDATES ================")
+        print(f"Total scored candidates: {len(reranked_docs)} | Selected top_k: {top_k}")
+        for candidate in reranked_docs:
+            print(
+                f"[#{candidate['rerank_rank']:02d}] score={candidate['rerank_score']:.4f} | source={candidate['source']}\n"
+                f"     {self._doc_preview(candidate['content'])}"
+            )
+        print("=====================================================\n")
 
     async def process(self, query: str) -> dict:
         if not self.vectorstore:
             return {"response": "System Error: KB missing", "source": "error"}
 
-        # A. Retrieve
-        # docs = self.vectorstore.similarity_search(query, k=RETRIEVAL_K)
-        # candidate_texts = [d.page_content for d in docs]
+        # Encode base query through the configured embedder so prompt handling
+        # stays model-specific (for example, Jina vs BGE prompt formats).
+        q_base_vector = self.embedder.embed_query(query)
+        q_base_tensor = torch.tensor(
+            [q_base_vector],
+            dtype=torch.float32,
+            device=self.device,
+        )
         
-        # if not candidate_texts:
-        #     return {"response": "No data found.", "source": "local-empty"}
-
-        # # B. Embed & Score
-        # # Note: self.embedder.model handles the device logic internally now
-        # q_emb_tensor = self.embedder.model.encode(
-        #     [query], prompt_name="retrieval.query", convert_to_tensor=True
-        # ).to(self.device)
-        
-        # d_embs_tensor = self.embedder.model.encode(
-        #     candidate_texts, prompt_name="retrieval.passage", convert_to_tensor=True
-        # ).to(self.device)
-        
-        # q_expanded = q_emb_tensor.expand(d_embs_tensor.shape[0], -1)
-        
-        # with torch.no_grad():
-        #     scores = self.model(q_expanded, d_embs_tensor)
-            
-        # best_score, best_idx = torch.max(scores, dim=0)
-        # best_score = float(best_score.item())
-        # best_text = candidate_texts[best_idx]
-        
-        # print(f"Score: {best_score:.4f}")
-
-        # context = "\n\n".join(candidate_texts)
-        # llm_answer = generate_response(query, context)
-        # return {"response": llm_answer, "source": "llm", "confidence": best_score}
-        
-        q_base_tensor= self.embedder.model.encode(
-            [query], prompt_name="retrieval.query", convert_to_tensor=True
-        ).to(self.device)
-        # SentenceTransformers may return bf16/fp16 under mixed precision on GPU.
-        # Keep downstream math/FAISS inputs stable by using float32.
+        # Convert to float32 for stability
         if q_base_tensor.dtype in (torch.bfloat16, torch.float16):
             q_base_tensor = q_base_tensor.to(dtype=torch.float32)
+        
+        # Generate 4 query expansions
         with torch.no_grad():
             v_para, v_broad, v_tech, v_expl = self.expander(q_base_tensor)
-            scale_factor = 3.0 
-    
-            v_para = q_base_tensor + (v_para - q_base_tensor) * scale_factor
-            v_broad = q_base_tensor + (v_broad - q_base_tensor) * scale_factor
-            v_tech = q_base_tensor + (v_tech - q_base_tensor) * scale_factor
-            v_expl = q_base_tensor + (v_expl - q_base_tensor) * scale_factor
-        query_vectors={
+        
+        # Store all 5 query variants (original + 4 expansions)
+        query_vectors = {
             "base": tensor_to_numpy(q_base_tensor),
             "para": tensor_to_numpy(v_para),
             "broad": tensor_to_numpy(v_broad), 
             "tech": tensor_to_numpy(v_tech),
             "expl": tensor_to_numpy(v_expl)
         }
-        # Debug: Check how different the variants are from the base
-        # sim_tech = torch.nn.functional.cosine_similarity(q_base_tensor, v_tech)
-        # print(f"Similarity (Base <-> Tech): {sim_tech.item():.4f}")
-        # sim_para = torch.nn.functional.cosine_similarity(q_base_tensor, v_para)
-        # print(f"Similarity (Base <-> Para): {sim_para.item():.4f}")
-        # sim_broad = torch.nn.functional.cosine_similarity(q_base_tensor, v_broad)
-        # print(f"Similarity (Base <-> Broad): {sim_broad.item():.4f}")
-        # sim_expl = torch.nn.functional.cosine_similarity(q_base_tensor, v_expl)
-        # print(f"Similarity (Base <-> Expl): {sim_expl.item():.4f}")
         
-        unique_docs={}
+        # Retrieve 10 documents per variant (5 variants * 10 docs = up to 50 docs)
+        unique_candidates = {}
+        raw_hits = 0
         
-        # Adjust retrieval k based on LIGN configuration
-        retrieval_k = LIGN_RETRIEVAL_K if self.lign_ranker else RETRIEVAL_K
+        for name, vec_np in query_vectors.items():
+            results = self.vectorstore.similarity_search_by_vector(vec_np[0], k=RETRIEVAL_K)
+            for rank, doc in enumerate(results, start=1):
+                raw_hits += 1
+                content = doc.page_content.strip()
+                if not content:
+                    continue
+
+                existing = unique_candidates.get(content)
+                if existing is None:
+                    metadata = doc.metadata or {}
+                    unique_candidates[content] = {
+                        "content": content,
+                        "metadata": metadata,
+                        "source": self._doc_source(metadata),
+                        "retrieval_hits": [{"query_variant": name, "rank": rank}],
+                    }
+                else:
+                    existing["retrieval_hits"].append({"query_variant": name, "rank": rank})
         
-        for name,vec_np in query_vectors.items():
-            results=self.vectorstore.similarity_search_by_vector(vec_np[0], k=retrieval_k)
-            
-            # candidates=[doc.page_content for doc in results]
-            # docs="\n--------------------\n".join(candidates)
-            # print(f"Top-{retrieval_k} docs for '{name}' query vector:\n{docs}\n")
-            for doc in results:
-                if doc.page_content not in unique_docs:
-                    unique_docs[doc.page_content] = doc
-        candidate_texts = list(unique_docs.keys())
-        if not candidate_texts:
+        candidates = list(unique_candidates.values())
+
+        if not candidates:
             return {"response": "No data found.", "source": "local-empty"}
-        print(f"Retrieved {len(candidate_texts)} unique documents.")
         
-        # === LIGN RE-RANKING ===
-        if self.lign_ranker:
-            print(f"[LIGN] Re-ranking {len(candidate_texts)} candidates...")
-            scored_docs = self.lign_ranker.batch_score(query, candidate_texts)
-            
-            # Filter by threshold and take top-k
-            filtered_docs = [(doc, score) for doc, score in scored_docs if score >= LIGN_THRESHOLD]
-            top_docs = filtered_docs[:LIGN_TOP_K]
-            
-            if not top_docs:
-                print(f"[LIGN] No documents passed threshold {LIGN_THRESHOLD}")
-                return {"response": "No relevant data found.", "source": "lign-filtered"}
-            
-            # Log re-ranking results
-            print(f"[LIGN] Kept {len(top_docs)}/{len(candidate_texts)} docs (threshold={LIGN_THRESHOLD})")
-            for i, (doc, score) in enumerate(top_docs[:3]):
-                preview = doc[:80].replace('\n', ' ')
-                print(f"  [{i+1}] Score: {score:.3f} | {preview}...")
-            
-            # Update candidate_texts to re-ranked top-k
-            candidate_texts = [doc for doc, score in top_docs]
-        
-        d_embs_tensor = self.embedder.model.encode(
-            candidate_texts, prompt_name="retrieval.passage", convert_to_tensor=True
-        ).to(self.device)
-        if d_embs_tensor.dtype in (torch.bfloat16, torch.float16):
-            d_embs_tensor = d_embs_tensor.to(dtype=torch.float32)
-        with torch.no_grad():
-            s_base=torch.mm(q_base_tensor,d_embs_tensor.t())[0]
-            s_para=torch.mm(v_para,d_embs_tensor.t())[0]
-            s_broad=torch.mm(v_broad,d_embs_tensor.t())[0]
-            s_tech=torch.mm(v_tech,d_embs_tensor.t())[0]
-            s_expl=torch.mm(v_expl,d_embs_tensor.t())[0]
-            
-            
-            d_para=s_para - s_base
-            d_broad=s_broad - s_base
-            d_tech=s_tech - s_base
-            d_expl=s_expl - s_base
-            
-            q_broadcast=q_base_tensor.expand(d_embs_tensor.size(0), -1)
-            final_scores, dynamic_weights = self.router(
-                q_broadcast, s_base, d_para, d_broad, d_tech, d_expl
+        print(f"Retrieved {len(candidates)} unique documents from {len(query_vectors)} query variants")
+        self._print_retrieval_candidates(candidates, raw_hits)
+
+        if self.reranker:
+            reranked_candidates = self.reranker.rerank(
+                query=query,
+                candidates=candidates,
+                top_k=len(candidates),
             )
-            sorted_scores, sorted_indices = torch.sort(final_scores, descending=True)
-            best_scores, best_idxs = sorted_scores[:10], sorted_indices[:10]
-            # best_score = float(best_scores[0].item())
-            # best_doc = candidate_texts[best_idxs[0]]
-            # best_weights = dynamic_weights[best_idxs[0]].tolist()
-            # print(f"Selected Doc (Index {best_idxs[0]}) | Score: {best_score:.4f}")
-            # print(f"Active Intent Weights -> Para:{best_weights[0]:.2f} Broad:{best_weights[1]:.2f} Tech:{best_weights[2]:.2f} Expl:{best_weights[3]:.2f}")
-            # print("best doc:", best_doc)
-            selected_texts = []
-            total_chars = 0
-            for idx in best_idxs.tolist()[:MAX_CONTEXT_DOCS]:
-                text = candidate_texts[idx]
-                if not isinstance(text, str):
-                    text = str(text)
-                text = text[:MAX_CONTEXT_DOC_CHARS]
+        else:
+            reranked_candidates = candidates[:]
+            for index, candidate in enumerate(reranked_candidates, start=1):
+                candidate["rerank_score"] = 0.0
+                candidate["rerank_rank"] = index
 
-                # Enforce total size cap
-                if total_chars + len(text) > MAX_CONTEXT_TOTAL_CHARS:
-                    remaining = MAX_CONTEXT_TOTAL_CHARS - total_chars
-                    if remaining <= 0:
-                        break
-                    text = text[:remaining]
+        self._print_reranked_docs(reranked_candidates, MAX_CONTEXT_DOCS)
 
-                selected_texts.append(text)
-                total_chars += len(text)
-                if total_chars >= MAX_CONTEXT_TOTAL_CHARS:
-                    break
+        selected_candidates = reranked_candidates[:MAX_CONTEXT_DOCS]
 
-            context = "\n--------------------------\n".join(selected_texts)
-            # print(context)
-            return {"response_docs": context, "scores": best_scores.tolist()}
+        selected_docs = [candidate["content"] for candidate in selected_candidates]
+        context = "\n--------------------------\n".join(selected_docs)
+        
+        return {
+            "response_docs": context,
+            "num_candidates": len(candidates),
+            "reranked_top_docs": [
+                {
+                    "rank": candidate["rerank_rank"],
+                    "score": candidate["rerank_score"],
+                    "source": candidate["source"],
+                    "preview": self._doc_preview(candidate["content"], limit=220),
+                }
+                for candidate in selected_candidates
+            ],
+        }
+        
     def add_to_knowledge_base(self, documents):
         if not self.vectorstore:
             print("Vectorstore not initialized. Cannot add documents.")
@@ -277,16 +202,8 @@ class RAGEngine:
         self.vectorstore.add_documents(documents)
         self.vectorstore.save_local("artifacts/vector_db/agri_faiss_index")
         print(f"Added {len(documents)} documents to the knowledge base.")
+
 rag_engine = RAGEngine()
-# import asyncio
-
-# rag_engine = RAGEngine()
-
-# async def main():
-#     result = await rag_engine.process("Red bugs in my flour")
-#     print(result)
-
-# asyncio.run(main())
 
 async def get_rag_engine():
     return rag_engine

@@ -57,7 +57,7 @@ def retrieval_node(state: AgentState) -> AgentState:
         tool_msg = ToolMessage(
             content=retrieval_results,
             tool_call_id=str(uuid.uuid4()),
-            name="retrieval_tool",
+            name="retrieval_tool",  
         )
 
         messages = state.get("messages", [])
@@ -85,30 +85,56 @@ def transform_query_node(state: AgentState) -> AgentState:
     web_results = state.get("web_search_results", "")
     iteration = state.get("iteration_count", 0)
     
+    history_context = ""
+    chat_history = state.get("chat_history", [])
+    if chat_history:
+        history_lines = []
+        for msg in chat_history:
+            role = msg.get("role", "")
+            content = msg.get("content", "")
+            if role == "user":
+                history_lines.append(f"User: {content}")
+            elif role == "assistant":
+                history_lines.append(f"Assistant: {content}")
+        if history_lines:
+            history_context = "=== Previous Conversation ===\n" + "\n".join(history_lines) + "\n\n"
+
     llm = _get_model()
-    structured_llm = llm.with_structured_output(SearchQuery)
 
     if iteration == 0:
-        system_prompt = "You are a search expert. Convert the user's question into a keyword-optimized search query for Google."
-        user_prompt = f"User Question: {user_query}\n\nProvide the best search query."
+        system_prompt = "You are a search expert. Convert the user's question into a keyword-optimized search query for Google. Make sure to append 'in India' or 'Indian agriculture' to localize the results if appropriate. Use the previous conversation context to understand what the user is referring to."
+        user_prompt = f"{history_context}User Question: {user_query}\n\nProvide the best search query."
     else:
         system_prompt = """You are a search expert. The previous search results were insufficient.
         Generate a NEW, DIFFERENT search query to find the missing information.
         Do not repeat the previous query."""
-        user_prompt = f"""User Question: {user_query}
+        user_prompt = f"""{history_context}User Question: {user_query}
         Previous Search Query: {state.get('search_query', '')}
         Previous Search Results: {web_results}
         
         What should we search for next?"""
 
     try:
+        # 1. Try structured output first
+        structured_llm = llm.with_structured_output(SearchQuery)
         result = structured_llm.invoke([
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ])
         new_query = result.query
-    except Exception:
-        new_query = user_query 
+    except Exception as e:
+        print(f"Structured search query generation failed ({e}), falling back to string method.")
+        try:
+            # 2. Fallback to raw string invocation
+            fallback_system = system_prompt + "\nRespond ONLY with the search query string, no quotes or extra text."
+            fallback_result = llm.invoke([
+                {"role": "system", "content": fallback_system},
+                {"role": "user", "content": user_prompt}
+            ])
+            new_query = fallback_result.content.strip()
+        except Exception as fallback_e:
+            print(f"Error generating search query in fallback: {fallback_e}")
+            new_query = user_query 
 
     print(f"Generated Search Query: '{new_query}'")
     
@@ -119,22 +145,42 @@ def evaluate_retrieval_node(state: AgentState) -> AgentState:
     retrieval_results = state.get("retrieval_results", "")
     query = state["user_query"]
 
-    if not retrieval_results or len(retrieval_results) < 50:
-        print("not enough info from knowledge base, will do web search")
+    # If retrieval failed or returned nothing useful, go straight to web search.
+    if not retrieval_results or len(retrieval_results.strip()) < 50:
+        print("retrieval returned nothing useful, forcing web search")
+        return {**state, "needs_web_search": True}
+
+    if "Error during retrieval" in retrieval_results or "error" in retrieval_results[:80].lower():
+        print("retrieval error detected, forcing web search")
         return {**state, "needs_web_search": True}
 
     llm = _get_model()
+
+    history_context = ""
+    chat_history = state.get("chat_history", [])
+    if chat_history:
+        history_lines = []
+        for msg in chat_history:
+            role = msg.get("role", "")
+            content = msg.get("content", "")
+            if role == "user":
+                history_lines.append(f"User: {content}")
+            elif role == "assistant":
+                history_lines.append(f"Assistant: {content}")
+        if history_lines:
+            history_context = "=== Previous Conversation ===\n" + "\n".join(history_lines) + "\n\n"
 
     try:
         structured_llm = llm.with_structured_output(GradeRetrieval)
 
         system_prompt = (
-            "You are a grader assessing relevance of a retrieved document to a user question. "
-            "If the document contains keywords or semantic meaning sufficient to answer the question, grade it as 'yes'. "
-            "If the document is empty, irrelevant, or says 'information not found', grade it as 'no'."
+            "You are a strict grader assessing the relevance of a retrieved document to an Indian farmer's question. "
+            "You must grade it as 'yes' ONLY if the document explicitly contains India-specific agricultural information "
+            "relevant to the user's question. If the document only contains general advice, lacks Indian context, "
+            "or cannot answer the question, grade it as 'no'."
         )
 
-        grade_prompt = f"""Retrieved Documents:
+        grade_prompt = f"""{history_context}Retrieved Documents:
 {retrieval_results}
 
 User Question:
@@ -148,9 +194,11 @@ User Question:
 
     except Exception:
         print("could not use structured output, using simple yes/no check")
-        prompt = f"""You are a grader.
-Does the following document contain the answer to the question: "{query}"?
-Document: {retrieval_results}
+        prompt = f"""You are a strict grader assessing relevance to an Indian farmer's query.
+Does the following document contain India-specific information to answer the question: "{query}"? 
+(If it is only general advice without Indian context, you must answer "no").
+
+{history_context}Document: {retrieval_results}
 
 Respond with exactly one word: "yes" or "no".
 """
@@ -218,26 +266,38 @@ def evaluate_search_node(state: AgentState) -> AgentState:
         return {**state, "needs_web_search": False}
 
     llm = _get_model()
-    try:
-        structured_llm = llm.with_structured_output(GradeRetrieval)
-        
-        system_prompt = """You are a research manager. 
+    system_prompt = """You are a research manager. 
         Decide if the search results gathered SO FAR are sufficient to answer the user's question strictly and accurately.
         If information is missing, answer 'yes' (we need more search).
         If sufficient, answer 'no' (stop searching)."""
         
-        user_prompt = f"""User Question: {query}
+    user_prompt = f"""User Question: {query}
         Current Search Results: {web_results}
         
         Do we need to search more?"""
         
-        score = structured_llm.invoke([
+    try:
+        # 1. Try structured output first
+        structured_llm = llm.with_structured_output(GradeRetrieval)
+        result = structured_llm.invoke([
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
-        ]).score.lower()
+        ])
+        score = result.score.lower()
         
-    except Exception:
-        score = "no"
+    except Exception as e:
+        print(f"Structured search evaluation failed ({e}), falling back to string method.")
+        try:
+            # 2. Fallback to raw string invocation
+            fallback_system = system_prompt + "\nRespond ONLY with 'yes' or 'no'."
+            result = llm.invoke([
+                {"role": "system", "content": fallback_system},
+                {"role": "user", "content": user_prompt}
+            ])
+            score = result.content.lower().strip()
+        except Exception as fallback_e:
+            print(f"Error checking search score in fallback: {fallback_e}")
+            score = "no"
 
     needs_more = "yes" in score
     print(f"Need more search? {'YES' if needs_more else 'NO'}")
@@ -277,19 +337,19 @@ def generate_response_node(state: AgentState) -> AgentState:
 
 CRITICAL RULES:
 1. You must use ONLY information explicitly provided in the context above.
-2. You must use ONLY information relevant to INDIA.
-3. If no India-specific information is found, state that clearly.
+2. You must ensure the response is grounded in the Indian farming context based ONLY on the retrieved documents.
+3. EXTREME SIMPLICITY: Your audience is a village farmer with no formal education. You must not use ANY technical terms, scientific jargon, or complex agricultural concepts.
 4. Plain text only (no markdown, no bullets).
 5. The responses will be played back as an audio message to the user so keep it like a natural spoken response, without awkward pauses or unnatural phrasing.
 6. Use the previous conversation history to maintain context and provide relevant follow-up answers.
 
-ADDITIONAL AUDIO CLARITY RULES:
+ADDITIONAL AUDIO CLARITY & FARMER-FRIENDLY RULES:
 1. Do NOT use any symbols, formulas, chemical names, or abbreviations such as N, P, K, P2O5, K2O, kg/ha, hectare.
 2. Always convert technical fertilizer terms into simple spoken language that a farmer can understand.
 3. Explain nutrients using common fertilizer names like urea, DAP, and potash, not scientific nutrient codes.
-4. Quantities must be explained in practical field terms, for example bags, handfuls, or simple numbers per acre.
-5. Do NOT assume the listener knows science or chemistry.
-6. Speak as if explaining to a farmer who has never gone to school.
+4. Quantities must be explained in practical everyday terms: e.g., bags, handfuls, or simple numbers per acre.
+5. Do NOT assume the listener knows science or chemistry. Never use big textbook words.
+6. Speak as if explaining to a farmer who has never gone to school. Keep sentences short.
 7. The output must sound like a village agriculture officer speaking naturally, slowly, and clearly.
 8. If a technical term cannot be simplified, explain it in one short sentence before using it.
 9. Prefer simple conversational Indian English or local-language-style English suitable for audio playback.
@@ -304,11 +364,13 @@ ADDITIONAL AUDIO CLARITY RULES:
 
 Question: {state['user_query']}"""
 
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+
     try:
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
+        # 1. Try structured output first
         structured_llm = llm.with_structured_output(LLMOutput)
         response = structured_llm.invoke(messages)
         final_response = response.content if hasattr(response, "content") else str(response)
@@ -324,5 +386,21 @@ Question: {state['user_query']}"""
         }
 
     except Exception as e:
-        print(f"response generation error: {e}")
-        return {**state, "final_response": "I apologize, but I encountered an error while generating a response."}
+        print(f"Structured response generation failed ({e}), falling back to string method.")
+        try:
+            # 2. Fallback to raw string invocation
+            response = llm.invoke(messages)
+            final_response = response.content.strip() if hasattr(response, "content") else str(response)
+
+            ai_msg = AIMessage(content=final_response)
+            state_messages = state.get("messages", [])
+            state_messages.append(ai_msg)
+
+            return {
+                **state,
+                "messages": state_messages,
+                "final_response": final_response,
+            }
+        except Exception as fallback_e:
+            print(f"Response generation error in fallback: {fallback_e}")
+            return {**state, "final_response": "I apologize, but I encountered an error while generating a response. Please try again."}

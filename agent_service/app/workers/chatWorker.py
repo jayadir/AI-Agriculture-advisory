@@ -7,134 +7,129 @@ from datetime import datetime, timezone
 from bson import ObjectId
 
 from app.db.mongodb import get_database
+from app.db.chat_history import get_recent_turns, append_turn
 from app.models.user import UserInDB
 from app.agents.react_agent_v2.graph import chat_with_agent
 from app.agents.react_agent_v2.learning import learn_from_session
-from twilio.rest import Client
+from app.workers.registration_node import is_registration_message, register_user_from_sms
 
-SQS_QUEUE_URL=os.getenv("AGENT_JOBS_QUEUE_URL")
-AWS_REGION=os.getenv("AWS_REGION", "us-east-1")
-TWILLIO_PHONE_NUMBER=os.getenv("TWILLIO_PHONE_NUMBER")
+SQS_QUEUE_URL = os.getenv("AGENT_JOBS_QUEUE_URL")
+AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
+AGENT_RESPONSE_QUEUE_URL = os.getenv(
+    "AGENT_RESPONSE_QUEUE_URL",
+    "https://sqs.ap-south-1.amazonaws.com/963716652927/agent-response-queue",
+)
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
 
-twilio_client=Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
 logging.basicConfig(level=logging.INFO)
-logger=logging.getLogger("AI_Worker")
+logger = logging.getLogger("AI_Worker")
 
-async def save_chat_session(db, phone: str, thread_id: str, query: str, response: str):
-    """
-    Save or update chat session with new message.
-    """
+
+def publish_agent_response(phone: str, thread_id: str, response_text: str, source: str):
+    """Publish generated responses to a queue for downstream delivery handlers."""
     try:
-        from app.models.chat import Message
-        
-        user_msg = Message(role="user", content=query, timestamp=datetime.now(timezone.utc))
-        assistant_msg = Message(role="assistant", content=response, timestamp=datetime.now(timezone.utc))
-        
-        # Check if session exists
-        existing_session = await db["chat_sessions"].find_one(
-            {"user_phone": phone},
-            sort=[("updated_at", -1)]
+        sqs = boto3.client("sqs", region_name=AWS_REGION)
+        payload = {
+            "phone": phone,
+            "thread_id": thread_id,
+            "response": response_text,
+            "source": source,
+            "status": "generated",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        sqs.send_message(
+            QueueUrl=AGENT_RESPONSE_QUEUE_URL,
+            MessageBody=json.dumps(payload),
         )
-        
-        if existing_session and existing_session.get("thread_id") == thread_id:
-            # Update existing session
-            await db["chat_sessions"].update_one(
-                {"_id": existing_session["_id"]},
-                {
-                    "$push": {
-                        "messages": {
-                            "$each": [user_msg.model_dump(), assistant_msg.model_dump()]
-                        }
-                    },
-                    "$set": {
-                        "updated_at": datetime.now(timezone.utc),
-                        "summary": query[:50]  # Update summary with latest query
-                    }
-                }
-            )
-            logger.info(f"Updated chat session for {phone}")
-        else:
-            # Create new session
-            session_dict = {
-                "_id": ObjectId(),
-                "user_phone": phone,
-                "thread_id": thread_id,
-                "messages": [user_msg.model_dump(), assistant_msg.model_dump()],
-                "summary": query[:50],
-                "updated_at": datetime.now(timezone.utc)
-            }
-            
-            await db["chat_sessions"].insert_one(session_dict)
-            logger.info(f"Created new chat session for {phone}")
-            
+        logger.info(f"Published response to agent-response queue for {phone}")
     except Exception as e:
-        logger.error(f"Error saving chat session: {e}")
+        logger.error(f"Failed to publish response to agent-response queue: {e}")
 
-async def process_message(message,db):
+# ---------------------------------------------------------------------------
+# Twilio client — used only for call delivery (not SMS).
+# ---------------------------------------------------------------------------
+def _get_twilio_client():
+    sid = os.getenv("TWILIO_ACCOUNT_SID")
+    token = os.getenv("TWILIO_AUTH_TOKEN")
+    if not sid or not token:
+        logger.warning("Twilio credentials not set (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN). "
+                       "Call delivery will be skipped.")
+        return None
     try:
-        payload=json.loads(message)
-        phone=payload.get("caller-number")
-        query=payload.get("transcription")
-        source=payload.get("source","sms")
-        
-        logger.info(f"Processing message from {phone}: {query}")
-        
+        from twilio.rest import Client
+        return Client(sid, token)
+    except Exception as e:
+        logger.warning(f"Could not initialise Twilio client: {e}")
+        return None
+
+async def process_message(message, db):
+    try:
+        payload = json.loads(message)
+        phone = payload.get("caller-number") or payload.get("phone")
+        query = payload.get("transcription") or payload.get("text") or payload.get("body")
+        source = payload.get("source", "sms").lower()   # "sms" | "call"
+
+        logger.info(f"[{source.upper()}] Incoming message from {phone}: {query}")
+
         if not phone or not query:
-            logger.warning("Invalid message payload, missing phone or transcription.")
+            logger.warning("Invalid message payload — missing phone or query text.")
             return
-        
-        # Check if there's an existing chat session for this phone number
-        existing_session = await db["chat_sessions"].find_one(
-            {"user_phone": phone},
-            sort=[("updated_at", -1)]  # Get most recent session
-        )
-        
-        thread_id = None
-        chat_history = []
-        
-        if existing_session:
-            thread_id = existing_session.get("thread_id")
-            # Get last 10 messages (only user queries and AI responses)
-            messages = existing_session.get("messages", [])
-            # Filter and get last 10 user-assistant pairs
-            chat_history = messages[-10:] if len(messages) > 10 else messages
-            logger.info(f"Continuing existing chat session with thread_id: {thread_id}")
-        else:
-            logger.info(f"Starting new chat session for {phone}")
-        
-        # Pass explicit chat history for more control over context
-        response_text = chat_with_agent(phone, query, thread_id, chat_history)
-        thread_id = response_text.get("thread_id")
-        
-        # Save/update chat session in database
-        await save_chat_session(db, phone, thread_id, query, response_text.get("response", ""))
-        
-        if source=="sms":
-            send_sms_reply(phone,response_text.get("response",""))
-        else:
-            trigger_call(phone,response_text.get("response",""))
-        if thread_id:
-            asyncio.create_task(learn_from_session(thread_id))
-            logger.info("Background learning started")
-            
-    except Exception as e:
-        logger.error(f"Error processing message: {e}")
-        
-def send_sms_reply(to_number,text):
-    try:
-        message=twilio_client.messages.create(
-            body=text,
-            from_=TWILLIO_PHONE_NUMBER,
-            to=to_number
-        )
-        logger.info(f"Sent SMS to {to_number}, SID: {message.sid}")
-    except Exception as e:
-        logger.error(f"Failed to send SMS to {to_number}: {e}")
-def trigger_call(to_number, text_response):
-    print(f"   [Call] Initiating call to {to_number}...")
-    
 
-    twiml_instructions = f"""
+        # ---- Registration node (SMS only) ------------------------------------
+        if source == "sms" and is_registration_message(query):
+            registered = await register_user_from_sms(db, phone, query)
+            if registered:
+                publish_agent_response(phone, "", "ok", source)
+                logger.info(f"[SMS] Registration completed for {phone}; sent OK ack.")
+            else:
+                logger.warning(f"[SMS] Registration format matched but registration failed for {phone}.")
+            return
+
+        # ---- Load last 10 turns for context ----------------------------------
+        chat_history = await get_recent_turns(db, phone, limit=10)
+        if chat_history:
+            logger.info(f"Loaded {len(chat_history) // 2} previous turns for {phone}")
+        else:
+            logger.info(f"No prior history found for {phone} — starting fresh")
+
+        # ---- Run agent -------------------------------------------------------
+        result = chat_with_agent(phone, query, chat_history=chat_history)
+        response_text = result.get("response", "")
+
+        # ---- Persist turn ---------------------------------------------------
+        await append_turn(db, phone, query, response_text)
+        logger.info(f"Appended turn to chat history for {phone}")
+
+        # ---- Queue response for downstream delivery -------------------------
+        publish_agent_response(phone, "", response_text, source)
+
+        # ---- Deliver response -----------------------------------------------
+        if source == "sms":
+            logger.info(
+                f"[SMS] Response queued to agent-response queue for {phone}; "
+                "Twilio SMS sending is disabled."
+            )
+        elif source == "call":
+            trigger_call(phone, response_text)
+        else:
+            logger.warning(f"Unknown source '{source}' — response not delivered.")
+
+        # ---- Background learning --------------------------------------------
+        asyncio.create_task(learn_from_session(phone))
+        logger.info("Background learning task created")
+
+    except Exception as e:
+        logger.error(f"Error processing message: {e}", exc_info=True)
+
+
+def trigger_call(to_number: str, text_response: str):
+    """Initiate an outbound call that reads the agent response aloud via Twilio."""
+    # TODO: integrate call delivery once Twilio credentials are configured
+    client = _get_twilio_client()
+    if not client:
+        logger.info(f"[CALL PLACEHOLDER] To: {to_number} | Response: {text_response[:80]}...")
+        return
+    twiml = f"""
     <Response>
         <Say voice="alice" language="en-IN">
             Hello. Here is the answer to your query.
@@ -144,16 +139,15 @@ def trigger_call(to_number, text_response):
         <Say>Goodbye.</Say>
     </Response>
     """
-
     try:
-        call = twilio_client.calls.create(
+        call = client.calls.create(
             to=to_number,
-            from_=os.getenv("TWILIO_PHONE_NUMBER"),
-            twiml=twiml_instructions
+            from_=TWILIO_PHONE_NUMBER,
+            twiml=twiml
         )
-        print(f"   [Call] Call started: {call.sid}")
+        logger.info(f"Call initiated to {to_number}, SID: {call.sid}")
     except Exception as e:
-        print(f"   [Call] Failed to trigger call: {e}")       
+        logger.error(f"Failed to trigger call to {to_number}: {e}")       
 async def main():
     sqs=boto3.client("sqs",region_name=AWS_REGION)
     db=await get_database()
