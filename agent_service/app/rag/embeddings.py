@@ -86,11 +86,11 @@ class BGEEmbedder(Embeddings):
             # 1. Determine Device
             if FORCE_CPU:
                 cls._instance.device = "cpu"
-                print("🛡️ OOM Protection: Forcing CPU mode for Embeddings.")
+                print(" OOM Protection: Forcing CPU mode for Embeddings.")
             else:
                 cls._instance.device = "cuda" if torch.cuda.is_available() else "cpu"
             
-            print(f"⏳ Loading BGE-Small-EN-v1.5 on {cls._instance.device}...")
+            print(f" Loading BGE-Small-EN-v1.5 on {cls._instance.device}...")
             
             # 2. Aggressive Cleanup before loading
             if torch.cuda.is_available():
@@ -102,7 +102,7 @@ class BGEEmbedder(Embeddings):
                 "BAAI/bge-small-en-v1.5",
                 device=cls._instance.device,
             )
-            print(f"✅ BGE-Small-EN-v1.5 Loaded Successfully (384-dim)")
+            print(f" BGE-Small-EN-v1.5 Loaded Successfully (384-dim)")
             
         return cls._instance
 
@@ -135,11 +135,11 @@ def get_embedder():
     model_choice = settings.EMBEDDING_MODEL.lower()
     
     if model_choice == "bge":
-        print(f"📊 Using BGE-Small-EN-v1.5 (384-dim) embeddings")
+        print(f"Using BGE-Small-EN-v1.5 (384-dim) embeddings")
         return BGEEmbedder()
     elif model_choice == "jina":
-        print(f"📊 Using Jina-Embeddings-v3 (1024-dim) embeddings")
+        print(f" Using Jina-Embeddings-v3 (1024-dim) embeddings")
         return JinaEmbedder()
     else:
-        print(f"⚠️ Unknown EMBEDDING_MODEL '{model_choice}', defaulting to Jina")
+        print(f" Unknown EMBEDDING_MODEL '{model_choice}', defaulting to Jina")
         return JinaEmbedder()

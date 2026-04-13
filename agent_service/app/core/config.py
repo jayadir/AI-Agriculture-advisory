@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "jina")
     RERANKER_MODEL_NAME: str = os.getenv("RERANKER_MODEL_NAME", "JAYADIR/mdts-agxqa-circuit-full-bm25")
     RERANKER_BATCH_SIZE: int = int(os.getenv("RERANKER_BATCH_SIZE", "16"))
-    RERANKER_TOP_K: int = int(os.getenv("RERANKER_TOP_K", "5"))
+    RERANKER_TOP_K: int = int(os.getenv("RERANKER_TOP_K", "7"))
     ENABLE_RERANKER: bool = os.getenv("ENABLE_RERANKER", "1").strip().lower() in ("1", "true", "yes", "y", "on")
 
     print(os.getenv("EMBEDDING_MODEL"))

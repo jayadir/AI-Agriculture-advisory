@@ -1,0 +1,223 @@
+[
+  
+
+  {
+    "id": "q_01",
+    "source": "https://agritech.tnau.ac.in/agriculture/agri_cropproduction_cereals_rice_tranpudlow_wet_nursery.html",
+    "question": "For one hectare transplanted rice, how much nursery area and seed rate should I plan for a wet nursery?",
+    "ground_truth_context": "The TNAU wet nursery recommendation is to select about 20 cents (around 800 square metres) of land near a water source to raise seedlings for one hectare of main field. For transplanted rice, the suggested seed rate is about 30 kg per hectare for long‑duration varieties, with slightly lower rates for shorter‑duration types, ensuring enough healthy seedlings for uniform planting."
+  },
+
+  {
+    "id": "q_02",
+    "source": "https://agritech.tnau.ac.in/agriculture/agri_cropproduction_cereals_rice_tranpudlow_nursery_nutrient_mgmt.html",
+    "question": "My rice nursery seedlings will be pulled out after 25 days. When should I apply DAP in the nursery and in what dose?",
+    "ground_truth_context": "For wet rice nurseries where seedlings are to be pulled out after about 25 days, basal application of DAP is recommended 10 days before pulling in less fertile soils. The guideline is to apply around 1 kg DAP and 4 kg gypsum per cent of nursery area on the 10th day after sowing so that nutrients are available and seedlings are sturdy at the time of transplanting."
+  },
+
+  {
+    "id": "q_03",
+    "source": "https://agritech.tnau.ac.in/expert_system/paddy/nurserymgmt.html",
+    "question": "What is the suggested seed treatment schedule with fungicide and Pseudomonas fluorescens for rice before sowing in the nursery?",
+    "ground_truth_context": "Nursery management guidance advises a wet seed treatment by soaking rice seed in a solution of Carbendazim, Pyroquilon or Tricyclozole at about 2 g per litre of water for each kilogram of seed for 10 hours. This protects seedlings against blast for nearly 40 days. If the seeds are needed immediately, soaked seeds are kept in a gunny bag in the dark for 24 hours for sprouting. In addition, seeds are treated with talc‑based Pseudomonas fluorescens at 10 g per kg of seed and soaked overnight in water before draining and sowing."
+  },
+
+  {
+    "id": "q_04",
+    "source": "https://tnagriculture.in/dashboard/CPG/01_Rice.pdf",
+    "question": "I have treated my rice seed with Pseudomonas fluorescens and soaked it overnight. If I want to sow immediately, what should I do with the soaked seeds?",
+    "ground_truth_context": "The crop production guide explains that after wet seed treatment and overnight soaking, when seeds are required for sowing immediately, they should be drained of excess water and kept in a gunny bag in a dark place, covered with additional gunny bags, for about 24 hours. This incubation allows uniform sprouting so that the pregerminated seeds are ready for line sowing in the nursery or main field."
+  },
+
+  {
+    "id": "q_05",
+    "source": "https://agritech.tnau.ac.in/agriculture/agri_nutrientmgt_wheat.html",
+    "question": "There are no soil test results for my wheat field. What blanket NPK dose and split application schedule should I follow?",
+    "ground_truth_context": "In the absence of soil test data, wheat nutrient management recommendations suggest using a blanket dose of 80:40:40 kg N, P2O5 and K2O per hectare. Half of the nitrogen, along with the full phosphorus and potassium dose, is applied as basal before sowing, and the remaining half of the nitrogen is split into two equal topdressings at crown‑root initiation and late tillering stages for better uptake."
+  },
+
+  {
+    "id": "q_06",
+    "source": "https://tnau.ac.in/site/research/wp-content/uploads/sites/60/2020/02/Agriculture-CPG-2020.pdf",
+    "question": "I am cultivating TKM 11 rice, which is listed as 110–120 days duration, but my crop is maturing in about 100 days. Could it still be TKM 11?",
+    "ground_truth_context": "The crop production guide lists TKM 11 as a medium‑duration rice variety with about 110–120 days to maturity and provides its yield, grain type and other morphological traits. If a field crop is maturing consistently around 100 days, it is closer in duration to varieties such as ADT (R) 48 or MDU 5, which are described as 94–100 and 95–100 days, respectively. A significantly shorter field duration suggests that the seed lot may belong to a different medium‑early variety rather than true TKM 11."
+  },
+
+  {
+    "id": "q_07",
+    "source": "https://hortiagri.weebly.com/uploads/3/0/7/3/30731055/practical-crop-production.pdf",
+    "question": "For transplanted rice, how does the recommended seed rate vary between small‑, medium‑ and bold‑seeded varieties?",
+    "ground_truth_context": "Practical crop production notes explain that for transplanted rice the seed rate depends on seed size, duration and system of cultivation. Small‑seeded varieties generally use about 20–25 kg seed per hectare, medium‑seeded types about 25–30 kg per hectare and bold‑seeded varieties around 30–35 kg per hectare under conventional transplanting, with lower rates for hybrid and SRI systems."
+  },
+
+  
+
+  {
+    "id": "q_08",
+    "source": "https://keralaagriculture.gov.in/wp-content/uploads/2019/02/KisanSamman_presentation.pdf",
+    "question": "Our family owns 1.5 hectares of cultivable land in the village and we actively farm it. Are we eligible for PM-KISAN benefits?",
+    "ground_truth_context": "PM-KISAN is notified as a Central Sector Scheme to augment the income of Small and Marginal Farmer families having cultivable land up to 2 hectares as per state or UT land records. The scheme defines the farmer family as husband, wife and minor children, and all such families with total cultivable landholding up to 2 hectares are eligible subject to the specified exclusion categories not applying to them."
+  },
+
+  {
+    "id": "q_09",
+    "source": "https://keralaagriculture.gov.in/wp-content/uploads/2019/02/KisanSamman_presentation.pdf",
+    "question": "My family owns 3.5 hectares of land in the records. We are farmers but our area is above 2 hectares. Can we register for PM-KISAN?",
+    "ground_truth_context": "The PM-KISAN guidelines clearly state that the scheme covers small and marginal farmer families having cultivable land holding up to 2 hectares in the land records of the concerned state or UT. Families whose total recorded landholding exceeds this limit do not fall under the targeted small and marginal category and are therefore not eligible to receive PM-KISAN benefits."
+  },
+
+  {
+    "id": "q_10",
+    "source": "https://www.angelone.in/knowledge-center/savings-schemes/eligibility-for-pm-kisan-samman-nidhi-yojana",
+    "question": "I am a small farmer but I filed income tax last year due to some non-farm income. Will this make me ineligible for PM-KISAN?",
+    "ground_truth_context": "Exclusion criteria for PM-KISAN specify that any farmer or their family member who has paid income tax in the previous assessment year is not eligible under the scheme. Even if the landholding size is within the small and marginal category, filing income tax returns places such households in an exclusion category, so they cannot receive PM-KISAN installments."
+  },
+
+  {
+    "id": "q_11",
+    "source": "https://www.angelone.in/knowledge-center/savings-schemes/eligibility-for-pm-kisan-samman-nidhi-yojana",
+    "question": "My father receives a government pension of ₹12,000 per month from a higher post, and I farm our land. Can our family still get PM-KISAN?",
+    "ground_truth_context": "The eligibility summary notes that higher-income and certain government service pensioners are excluded from PM-KISAN. Families where any member is a retired government employee receiving a monthly pension of ₹10,000 or more, other than those in multi-tasking staff or equivalent Group D posts, fall under the exclusion list and therefore cannot avail PM-KISAN support."
+  },
+
+  {
+    "id": "q_12",
+    "source": "https://keralaagriculture.gov.in/wp-content/uploads/2019/02/KisanSamman_presentation.pdf",
+    "question": "Our names were added to the PM-KISAN list but payments have not started. What verification steps must the state follow before funds are released?",
+    "ground_truth_context": "Implementation instructions highlight that state and UT governments must prepare and verify a list of eligible small and marginal farmer families from land records, then e-sign the district-wise beneficiary list at prescribed levels. Only after the state nodal officer submits this e-signed list are sanctions generated through PFMS for direct fund transfer, so payments start only after this verification and approval workflow is completed."
+  },
+
+  {
+    "id": "q_13",
+    "source": "https://www.digitalindia.gov.in/initiative/pm-kisan/",
+    "question": "As a small farmer, how and when will I receive the three PM-KISAN installments during the year?",
+    "ground_truth_context": "The official PM-KISAN description explains that each eligible farmer family is provided income support of ₹6,000 per year, released in three equal installments of ₹2,000 each directly into their bank accounts. The installments are scheduled for the four-month periods April–July, August–November and December–March, and are paid through a technology-based Direct Benefit Transfer system once the beneficiary has been verified."
+  },
+
+  {
+    "id": "q_14",
+    "source": "https://services.india.gov.in/service/detail/pm-kisan-samman-nidhi",
+    "question": "I am a marginal farmer and want to use PM-KISAN money mainly to buy fertilizer. Is that allowed or are there restrictions on how I spend it?",
+    "ground_truth_context": "The PM-KISAN scheme objective is to supplement the financial needs of small and marginal farmers in procuring various inputs to ensure proper crop health and yield. The benefit is transferred as income support without tying it to a specific input, so the farmer can use the funds to purchase fertilizers, seeds and other necessities for cultivation and household needs, as long as they continue to remain eligible."
+  },
+
+  {
+    "id": "q_15",
+    "source": "https://www.pib.gov.in/FactsheetDetails.aspx?Id=148600&reg=3&lang=2",
+    "question": "I need working capital for crop cultivation, buying fertilizer and also some money for household expenses. Can a single Kisan Credit Card cover all these needs?",
+    "ground_truth_context": "The Kisan Credit Card factsheet explains that KCC is designed to meet the comprehensive credit requirements of farmers by providing timely and adequate credit under a single window. The limit sanctioned under KCC is meant to cover short-term crop cultivation expenses, post-harvest and marketing costs, household consumption needs and working capital for farm assets and allied activities, so that multiple farm-related requirements are met through one flexible credit facility."
+  },
+
+  {
+    "id": "q_16",
+    "source": "https://www.pib.gov.in/FactsheetDetails.aspx?Id=148600&reg=3&lang=2",
+    "question": "We are marginal farmers with very small holdings. How does KCC fix the loan limit for us if we do not have much land as security?",
+    "ground_truth_context": "For marginal farmers, KCC guidelines provide for a flexible composite credit limit, typically in the range of about ₹10,000 to ₹50,000, which is not strictly linked to land value. This composite limit is intended to meet crop production, post-harvest, household and small term-loan requirements over a five-year period, making it easier for very small holders to access institutional credit without complex security arrangements."
+  },
+
+  {
+    "id": "q_17",
+    "source": "https://www.pib.gov.in/FactsheetDetails.aspx?Id=148600&reg=3&lang=2",
+    "question": "If I take a Kisan Credit Card, will I get an ATM-like card and can I withdraw money multiple times during the season?",
+    "ground_truth_context": "Under the revised KCC scheme, farmers are issued an ATM-enabled RuPay debit card linked to their KCC account to facilitate cash withdrawals and purchases. The card allows multiple withdrawals within the sanctioned limit, and documentation is usually completed once at the time of sanction, with provision for automatic enhancement of the limit in subsequent years based on cropping pattern and cost escalation."
+  },
+
+  {
+    "id": "q_18",
+    "source": "https://www.mygov.in/campaigns/pmfby/",
+    "question": "I am worried about crop loss from heavy rain and hailstorm. What stages and risks does Pradhan Mantri Fasal Bima Yojana cover for my crop?",
+    "ground_truth_context": "The PMFBY campaign material states that the scheme provides comprehensive insurance coverage from pre-sowing to post-harvest stages against non-preventable risks like drought, flood, inundation, landslide, hailstorm and pests and diseases. It is designed to stabilize farmers’ income by compensating for yield losses due to such calamities, with low farmer premium rates and the remaining premium subsidized by the government."
+  },
+
+  {
+    "id": "q_19",
+    "source": "https://www.mygov.in/campaigns/pmfby/",
+    "question": "If I insure under PMFBY, how is the claim amount decided when there is yield loss in my village?",
+    "ground_truth_context": "PMFBY uses notified insurance units, often at village or cluster level, where crop cutting experiments are conducted to estimate the actual yield of the insured crop for that season. When the assessed yield for the insurance unit falls below the threshold yield defined for that crop and area, all insured farmers in the unit become eligible for claim, and the claim per farmer is calculated based on the extent of shortfall and the sum insured."
+  },
+
+  {
+    "id": "q_20",
+    "source": "https://www.pib.gov.in/PressNoteDetails.aspx?NoteId=155448&ModuleId=3",
+    "question": "From 2018-19 onwards, how has the MSP policy been changed in relation to the cost of production for farmers?",
+    "ground_truth_context": "The MSP policy note explains that from the 2018–19 kharif marketing season, the Minimum Support Prices for all mandated crops have been fixed at a level of at least 1.5 times the all-India weighted average cost of production. This means MSP is designed to give farmers a minimum margin of about 50 percent over their production cost, strengthening MSP as an income safety net."
+  },
+
+  {
+    "id": "q_21",
+    "source": "http://www.agritech.tnau.ac.in/amis/policies_msp_intro.html",
+    "question": "In a bumper harvest year when market price falls below MSP, how should a farmer practically use MSP to avoid distress sale?",
+    "ground_truth_context": "The MSP introduction note states that MSP is a guaranteed price announced by the government to protect producers from price falls, particularly in years of surplus production. If open-market prices drop below the MSP, farmers can sell their produce to designated government procurement agencies at the MSP rate, thereby preventing distress sales and ensuring that they at least recover the cost of production with some margin."
+  },
+
+  {
+    "id": "q_22",
+    "source": "https://www.pib.gov.in/FactsheetDetails.aspx?Id=148602",
+    "question": "My Soil Health Card shows low phosphorus and potassium but normal nitrogen. How should I change my fertilizer use based on this card?",
+    "ground_truth_context": "The Soil Health Card factsheet notes that each card provides nutrient status for key parameters along with crop-wise fertilizer recommendations, so farmers can identify which nutrients are deficient. When the card indicates low phosphorus and potassium but adequate nitrogen, the farmer is advised to reduce indiscriminate urea use and instead apply the recommended doses of phosphatic and potassic fertilizers, balancing NPK application according to the card’s prescription."
+  },
+
+  {
+    "id": "q_23",
+    "source": "https://www.pib.gov.in/FactsheetDetails.aspx?Id=148602",
+    "question": "How often will soil samples be tested and Soil Health Cards updated for my fields under the national scheme?",
+    "ground_truth_context": "According to scheme information, soil samples from every grid or plot are intended to be collected and tested at intervals of about two years, and Soil Health Cards are issued or updated for the corresponding farmers after each testing cycle. This periodic testing helps monitor changes in soil fertility and allows the card recommendations to be revised based on the latest soil nutrient status."
+  },
+
+  
+  {
+    "id": "q_24",
+    "source": "https://agritech.tnau.ac.in/expert_system/paddy/nurserymgmt.html",
+    "question": "My rice nursery soil is very poor and I will pull out seedlings in about 22 days. How much DAP should I apply now, and is there an alternative if DAP is not available?",
+    "ground_truth_context": "For less fertile rice nursery soils where seedlings are to be pulled out at 20–25 days, the recommendation is a basal application of about 40 kg of DAP to a 20 cent nursery area before the last puddling. If DAP is not readily available, the same guideline suggests using straight fertilizers instead, specifically around 16 kg of urea plus 120 kg of superphosphate for the 20 cent nursery, to provide equivalent nutrient supply."
+  },
+
+  {
+    "id": "q_25",
+    "source": "https://tnagriculture.in/dashboard/CPG/01_Rice.pdf",
+    "question": "I have soaked rice seeds overnight with Pseudomonas fluorescens as biocontrol treatment but suddenly need to sow them today. How can I make the seeds ready quickly for sowing?",
+    "ground_truth_context": "The rice crop production guide describes that after wet seed treatment and soaking, when seeds must be sown immediately, they should be drained and placed in a gunny bag kept in a dark place and covered for about 24 hours to allow sprouting. This short incubation produces uniformly sprouted seeds that are then suitable for direct sowing or nursery sowing, while retaining the protection afforded by the Pseudomonas fluorescens treatment."
+  },
+
+  {
+    "id": "q_26",
+    "source": "https://agritech.tnau.ac.in/crop_protection/pdf/2011/july2011.pdf",
+    "question": "In my Kuruvai rice nursery, blast and brown spot are appearing. I have Pseudomonas fluorescens available. How should I use it for seed and nursery treatment?",
+    "ground_truth_context": "Disease management advisories recommend a wet seed treatment by soaking seeds overnight in water containing Carbendazim 2 g per kg or Pseudomonas fluorescens 10 g per kg of seed. Additionally, Pseudomonas fluorescens can be applied at about 1.5 kg per 20 cent nursery area mixed with 30 kg of farmyard manure about 48 hours before pulling out seedlings, so that both seed and nursery soil receive protective populations of the biocontrol agent."
+  },
+
+  {
+    "id": "q_27",
+    "source": "https://agritech.tnau.ac.in/crop_protection/pdf/2017/PDSR%20newspaper%20may.pdf",
+    "question": "I skipped Pseudomonas seed treatment but want to protect my rice nursery now. Can I still use Pseudomonas fluorescens, and in what way?",
+    "ground_truth_context": "A plant protection bulletin explains that even when Pseudomonas fluorescens was not used in seed treatment, it can be applied later by broadcasting about 1.5 kg of the formulation per 20 cent nursery mixed with 30 kg of farmyard manure, 48 hours before pulling seedlings. An alternative is to prepare a suspension of about 2.5 kg Pseudomonas in water in a small flooded corner of the main field and dip the nursery seedlings in this solution for around 30 minutes before transplanting."
+  },
+
+  {
+    "id": "q_28",
+    "source": "https://www.nanodap.in/ara/application",
+    "question": "I want to replace part of my granular DAP in irrigated wheat with Nano DAP foliar spray. What is the recommended dose per acre per spray and how many sprays should I plan?",
+    "ground_truth_context": "The Nano DAP application guide suggests using roughly 250–500 millilitres of Nano DAP liquid per acre per foliar spray, with the exact dose depending on crop and sprayer capacity. For field crops such as cereals, two to three foliar sprays are generally advised at critical growth stages, preparing the spray solution by mixing about 50–75 millilitres per 15–16 litre knapsack tank so that the total volume applied per acre matches the recommended dose."
+  },
+
+  {
+    "id": "q_29",
+    "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8657833/",
+    "question": "I am currently using only urea for nitrogen in a cereal system. If I replace half of this nitrogen with composted manure, what changes in soil nitrogen and carbon can I expect over time?",
+    "ground_truth_context": "Long-term experiments reported in the study show that substituting about 50 percent of mineral nitrogen from urea with composted manure increases total soil nitrogen and organic carbon in the upper soil layers compared with using only urea. At the same time, treatments with manure substitution tend to reduce nitrate accumulation and leaching in deeper layers, indicating a more sustainable nitrogen balance and improved soil quality without sacrificing crop yield."
+  },
+
+  {
+    "id": "q_30",
+    "source": "https://pdfs.semanticscholar.org/2e21/33dbdc959db05264131ebecc475edd13f18a.pdf",
+    "question": "Chemical nitrogen fertilizers are expensive for my vegetable crop. If I rely more on Gliricidia-enriched compost, how much can it substitute for urea without reducing yield?",
+    "ground_truth_context": "Research on alternate nitrogen amendments suggests that compost enriched with about 30 percent dry Gliricidia prunings, applied at around 15 tonnes per hectare, can effectively replace the equivalent of a full mineral nitrogen dose for certain vegetables. Yield levels under this Gliricidia-enriched compost were comparable to those under conventional urea-based fertilization, while improving soil organic matter, making it a viable substitute for a substantial portion of chemical nitrogen."
+  },
+
+  {
+    "id": "q_31",
+    "source": "https://jsau.sau.ac.bd/wp-content/uploads/2017/11/07.-M-26.pdf",
+    "question": "In wheat, I already applied a small basal dose of nitrogen. How can I use foliar urea sprays to boost yield without lodging the crop?",
+    "ground_truth_context": "A field trial on wheat showed that applying a modest basal nitrogen dose of about 20 kg N per hectare at sowing, followed by three foliar sprays of 1–2 percent urea solution at tillering, jointing and booting stages, significantly increased grain yield and yield components. The foliar route supplied additional nitrogen directly to the leaves without excessively stimulating vegetative growth, thereby improving yield while minimizing the risk of lodging associated with very high soil-applied nitrogen."
+  }
+]

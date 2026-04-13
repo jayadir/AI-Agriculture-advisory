@@ -9,9 +9,16 @@ from bson import ObjectId
 from app.db.mongodb import get_database
 from app.db.chat_history import get_recent_turns, append_turn
 from app.models.user import UserInDB
-from app.agents.react_agent_v2.graph import chat_with_agent
-from app.agents.react_agent_v2.learning import learn_from_session
 from app.workers.registration_node import is_registration_message, register_user_from_sms
+
+AGENT_VERSION = os.getenv("AGENT_VERSION", "deep_research")
+
+if AGENT_VERSION == "deep_research":
+    from app.agents.deep_research_agent.graph import chat_with_agent
+    from app.agents.deep_research_agent.learning import learn_from_session
+else:
+    from app.agents.react_agent_v2.graph import chat_with_agent
+    from app.agents.react_agent_v2.learning import learn_from_session
 
 SQS_QUEUE_URL = os.getenv("AGENT_JOBS_QUEUE_URL")
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
@@ -23,6 +30,11 @@ TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("AI_Worker")
+
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("openai").setLevel(logging.WARNING)
+logging.getLogger("groq").setLevel(logging.WARNING)
 
 
 def publish_agent_response(phone: str, thread_id: str, response_text: str, source: str):
@@ -95,6 +107,8 @@ async def process_message(message, db):
         # ---- Run agent -------------------------------------------------------
         result = chat_with_agent(phone, query, chat_history=chat_history)
         response_text = result.get("response", "")
+
+        logger.info(f"[FINAL ANSWER] To {phone}:\n{response_text}")
 
         # ---- Persist turn ---------------------------------------------------
         await append_turn(db, phone, query, response_text)
